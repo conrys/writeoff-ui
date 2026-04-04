@@ -3,161 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мій План на День</title>
+    <title>Writeoff Setup & Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         :root {
-            --primary: #6366f1;
-            --bg: #f8fafc;
+            --bg: #f0f4f8;
+            --card: #ffffff;
+            --accent: #0f766e;
             --text: #1e293b;
         }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            padding: 40px 20px;
-            margin: 0;
-        }
-
-        .container {
-            background: white;
-            width: 100%;
-            max-width: 400px;
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        }
-
-        h2 { margin-top: 0; color: var(--primary); text-align: center; }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 1.5rem;
-        }
-
-        input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input:focus { border-color: var(--primary); }
-
-        button#add-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        button#add-btn:hover { opacity: 0.9; }
-
-        ul { list-style: none; padding: 0; }
-
-        li {
-            background: #f1f5f9;
-            margin-bottom: 10px;
-            padding: 12px 15px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .delete-btn {
-            background: #ff4757;
-            color: white;
-            border: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: #94a3b8;
-            font-style: italic;
-        }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
+        .card { background: var(--card); padding: 24px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
+        h2 { margin-top: 0; font-size: 20px; color: var(--accent); text-align: center; }
+        .field { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; color: #64748b; }
+        input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: opacity 0.2s; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-test { background: #0ea5e9; color: white; margin-top: 20px; }
+        #log { margin-top: 20px; padding: 12px; background: #1e293b; color: #7dd3fc; border-radius: 10px; font-size: 12px; min-height: 50px; white-space: pre-wrap; word-break: break-all; }
+        .status-ok { color: #10b981; font-weight: bold; }
+        .status-err { color: #ef4444; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🎯 План на сьогодні 2</h2>
+<div class="card">
+    <h2>⚙️ Налаштування доступу</h2>
     
-    <div class="input-group">
-        <input type="text" id="task-input" placeholder="Що потрібно зробити?">
-        <button id="add-btn">Додати</button>
+    <div id="setup-section">
+        <div class="field">
+            <label>Логін (Master Key)</label>
+            <input type="password" id="m_key" placeholder="Введіть ваш ключ">
+        </div>
+        <div class="field">
+            <label>Файл-ключ (.wfkey)</label>
+            <input type="file" id="f_input" accept=".wfkey,text/plain">
+        </div>
+        <button class="btn btn-primary" onclick="setupAccess()">Активувати доступ</button>
     </div>
 
-    <ul id="task-list">
-        </ul>
+    <div id="test-section" style="display:none;">
+        <div id="info" style="font-size: 14px; margin-bottom: 10px;"></div>
+        <button class="btn btn-test" onclick="runDiagnostic()">🚀 ТЕСТ ЗВ'ЯЗКУ</button>
+    </div>
+
+    <div id="log">Очікування активації...</div>
 </div>
 
 <script>
-    const input = document.getElementById('task-input');
-    const addBtn = document.getElementById('add-btn');
-    const taskList = document.getElementById('task-list');
-
-    // Завантаження збережених справ
-    let tasks = JSON.parse(localStorage.getItem('my_tasks')) || [];
-
-    function renderTasks() {
-        taskList.innerHTML = tasks.length === 0 
-            ? '<p class="empty-state">Список порожній. Час відпочити!</p>' 
-            : '';
-
-        tasks.forEach((task, index) => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <span>${task}</span>
-                <button class="delete-btn" onclick="deleteTask(${index})">✕</button>
-            `;
-            taskList.appendChild(li);
-        });
-        localStorage.setItem('my_tasks', JSON.stringify(tasks));
+    const logEl = document.getElementById('log');
+    
+    function log(msg, isError = false) {
+        const span = isError ? `<span class="status-err">${msg}</span>` : msg;
+        logEl.innerHTML += `\n> ${span}`;
+        logEl.scrollTop = logEl.scrollHeight;
     }
 
-    function addTask() {
-        const text = input.value.trim();
-        if (text) {
-            tasks.push(text);
-            input.value = '';
-            renderTasks();
+    // 1. АКТИВАЦІЯ ТА РОЗПАКОВКА В localStorage
+    function setupAccess() {
+        const mKey = document.getElementById('m_key').value;
+        const file = document.getElementById('f_input').files[0];
+
+        if (!mKey || !file) {
+            alert("Введіть ключ та оберіть файл!");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const encrypted = e.target.result;
+                const bytes = CryptoJS.AES.decrypt(encrypted, mKey);
+                const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+                
+                if (!decrypted) throw new Error("Невірний ключ або файл");
+
+                const config = JSON.parse(decrypted);
+                
+                // Зберігаємо в localStorage (використовуємо твої скорочення з Encoder)
+                localStorage.setItem('gas_url', config.g);
+                localStorage.setItem('sheet_id', config.s);
+                localStorage.setItem('folder_id', config.f);
+                localStorage.setItem('user_name', config.u);
+                localStorage.setItem('is_configured', 'true');
+
+                log("✅ Дані успішно розпаковані в localStorage!");
+                showTestSection(config.u);
+            } catch (err) {
+                log("❌ Помилка дешифрування: " + err.message, true);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function showTestSection(name) {
+        document.getElementById('setup-section').style.display = 'none';
+        document.getElementById('test-section').style.display = 'block';
+        document.getElementById('info').innerHTML = `Користувач: <b>${name}</b>`;
+    }
+
+    // 2. ТЕСТУВАЛЬНИК (PING)
+    async function runDiagnostic() {
+        const gasUrl = localStorage.getItem('gas_url');
+        log("Спроба з'єднання з GAS...");
+
+        const payload = {
+            action: "pingUi", // твій метод з Code.gs
+            sheet_id: localStorage.getItem('sheet_id'),
+            folder_id: localStorage.getItem('folder_id')
+        };
+
+        try {
+            // Використовуємо mode: 'no-cors' для GitHub Pages
+            const response = await fetch(gasUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+
+            // Оскільки no-cors не дає прочитати відповідь, 
+            // ми вважаємо успіхом сам факт відсутності помилки мережі
+            log("✅ Сигнал надіслано до Google Apps Script.");
+            log("⚠️ Перевір Google Таблицю: якщо запис з'явився, зв'язок 100% OK!");
+            
+        } catch (err) {
+            log("❌ Помилка мережі: " + err.message, true);
         }
     }
 
-    window.deleteTask = (index) => {
-        tasks.splice(index, 1);
-        renderTasks();
+    // Перевірка при завантаженні: чи ми вже авторизовані?
+    window.onload = () => {
+        if (localStorage.getItem('is_configured') === 'true') {
+            showTestSection(localStorage.getItem('user_name'));
+            log("Система готова. Натисніть ТЕСТ.");
+        }
     };
-
-    addBtn.onclick = addTask;
-
-    // Додавання через Enter
-    input.onkeypress = (e) => {
-        if (e.key === 'Enter') addTask();
-    };
-
-    renderTasks();
 </script>
 
 </body>
