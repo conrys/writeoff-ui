@@ -3,143 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Writeoff Setup & Test</title>
+    <title>Safe Connection Tester</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        :root {
-            --bg: #f0f4f8;
-            --card: #ffffff;
-            --accent: #0f766e;
-            --text: #1e293b;
-        }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
-        .card { background: var(--card); padding: 24px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
-        h2 { margin-top: 0; font-size: 20px; color: var(--accent); text-align: center; }
-        .field { margin-bottom: 15px; }
-        label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; color: #64748b; }
-        input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: opacity 0.2s; }
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-test { background: #0ea5e9; color: white; margin-top: 20px; }
-        #log { margin-top: 20px; padding: 12px; background: #1e293b; color: #7dd3fc; border-radius: 10px; font-size: 12px; min-height: 50px; white-space: pre-wrap; word-break: break-all; }
-        .status-ok { color: #10b981; font-weight: bold; }
-        .status-err { color: #ef4444; font-weight: bold; }
+        body { font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; display: flex; justify-content: center; }
+        .card { background: #1e293b; width: 100%; max-width: 400px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        #log { margin-top: 20px; padding: 15px; background: #000; border-radius: 10px; font-family: monospace; font-size: 12px; min-height: 100px; white-space: pre-wrap; color: #adbac7; }
+        .green { color: #10b981; }
+        .red { color: #ef4444; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>⚙️ Налаштування доступу</h2>
+    <h2 style="text-align:center">🔍 Перевірка зв'язку</h2>
     
-    <div id="setup-section">
-        <div class="field">
-            <label>Логін (Master Key)</label>
-            <input type="password" id="m_key" placeholder="Введіть ваш ключ">
-        </div>
-        <div class="field">
-            <label>Файл-ключ (.wfkey)</label>
-            <input type="file" id="f_input" accept=".wfkey,text/plain">
-        </div>
-        <button class="btn btn-primary" onclick="setupAccess()">Активувати доступ</button>
-    </div>
-
-    <div id="test-section" style="display:none;">
-        <div id="info" style="font-size: 14px; margin-bottom: 10px;"></div>
-        <button class="btn btn-test" onclick="runDiagnostic()">🚀 ТЕСТ ЗВ'ЯЗКУ</button>
-    </div>
+    <input type="password" id="m_key" placeholder="Логін (Master Key)">
+    <input type="file" id="f_input" accept=".wfkey">
+    
+    <button id="btn" onclick="runSafeTest()">Запустити діагностику</button>
 
     <div id="log">Очікування активації...</div>
 </div>
 
 <script>
     const logEl = document.getElementById('log');
-    
-    function log(msg, isError = false) {
-        const span = isError ? `<span class="status-err">${msg}</span>` : msg;
-        logEl.innerHTML += `\n> ${span}`;
-        logEl.scrollTop = logEl.scrollHeight;
+    function log(msg, color = '') { 
+        const cl = color ? ` class="${color}"` : '';
+        logEl.innerHTML += `\n<span${cl}>> ${msg}</span>`; 
     }
 
-    // 1. АКТИВАЦІЯ ТА РОЗПАКОВКА В localStorage
-    function setupAccess() {
+    async function runSafeTest() {
         const mKey = document.getElementById('m_key').value;
         const file = document.getElementById('f_input').files[0];
+        if(!mKey || !file) return alert("Введіть ключ та оберіть файл!");
 
-        if (!mKey || !file) {
-            alert("Введіть ключ та оберіть файл!");
-            return;
-        }
-
+        logEl.innerHTML = "> Починаю тест...";
+        
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             try {
-                const encrypted = e.target.result;
-                const bytes = CryptoJS.AES.decrypt(encrypted, mKey);
+                // 1. Дешифрування файлу
+                log("Дешифрування файлу...");
+                const bytes = CryptoJS.AES.decrypt(e.target.result, mKey);
                 const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+                if(!decrypted) throw new Error("Невірний Master Key!");
                 
-                if (!decrypted) throw new Error("Невірний ключ або файл");
-
                 const config = JSON.parse(decrypted);
-                
-                // Зберігаємо в localStorage (використовуємо твої скорочення з Encoder)
-                localStorage.setItem('gas_url', config.g);
-                localStorage.setItem('sheet_id', config.s);
-                localStorage.setItem('folder_id', config.f);
-                localStorage.setItem('user_name', config.u);
-                localStorage.setItem('is_configured', 'true');
+                log("Конфіг зчитано успішно.", "green");
 
-                log("✅ Дані успішно розпаковані в localStorage!");
-                showTestSection(config.u);
+                // 2. Авторизація (api_login)
+                log("Авторизація в системі Google...");
+                const authRes = await fetch(config.g, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'api_login',
+                        username: config.u,
+                        password: config.p
+                    })
+                }).then(r => r.json());
+
+                if(!authRes.ok) throw new Error("GAS відхилив вхід: " + authRes.error);
+                log("Сесія створена. Токен отримано.", "green");
+
+                // 3. ПІНГ (Перевірка чи працює requireUiSession_)
+                log("Відправка PING-запиту...");
+                const pingRes = await fetch(config.g, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'ping',
+                        session_token: authRes.sessionToken
+                    })
+                }).then(r => r.json());
+
+                if(pingRes.ok) {
+                    log("--- РЕЗУЛЬТАТ ---");
+                    log("✅ ЗВ'ЯЗОК ВСТАНОВЛЕНО!", "green");
+                    log("GAS бачить твою сесію та Script Properties.");
+                    log(`Час на сервері: ${pingRes.ts}`);
+                } else {
+                    throw new Error("Пінг не пройшов.");
+                }
+
             } catch (err) {
-                log("❌ Помилка дешифрування: " + err.message, true);
+                log(`ПОМИЛКА: ${err.message}`, "red");
             }
         };
         reader.readAsText(file);
     }
-
-    function showTestSection(name) {
-        document.getElementById('setup-section').style.display = 'none';
-        document.getElementById('test-section').style.display = 'block';
-        document.getElementById('info').innerHTML = `Користувач: <b>${name}</b>`;
-    }
-
-    // 2. ТЕСТУВАЛЬНИК (PING)
-    async function runDiagnostic() {
-        const gasUrl = localStorage.getItem('gas_url');
-        log("Спроба з'єднання з GAS...");
-
-        const payload = {
-            action: "pingUi", // твій метод з Code.gs
-            sheet_id: localStorage.getItem('sheet_id'),
-            folder_id: localStorage.getItem('folder_id')
-        };
-
-        try {
-            // Використовуємо mode: 'no-cors' для GitHub Pages
-            const response = await fetch(gasUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(payload)
-            });
-
-            // Оскільки no-cors не дає прочитати відповідь, 
-            // ми вважаємо успіхом сам факт відсутності помилки мережі
-            log("✅ Сигнал надіслано до Google Apps Script.");
-            log("⚠️ Перевір Google Таблицю: якщо запис з'явився, зв'язок 100% OK!");
-            
-        } catch (err) {
-            log("❌ Помилка мережі: " + err.message, true);
-        }
-    }
-
-    // Перевірка при завантаженні: чи ми вже авторизовані?
-    window.onload = () => {
-        if (localStorage.getItem('is_configured') === 'true') {
-            showTestSection(localStorage.getItem('user_name'));
-            log("Система готова. Натисніть ТЕСТ.");
-        }
-    };
 </script>
 
 </body>
