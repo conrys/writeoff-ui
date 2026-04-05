@@ -68,17 +68,47 @@
     .toast.warn{border-color:rgba(245,158,11,.35);color:var(--warning);}
     .section-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:11px;}
     .hidden{display:none!important;}
+
+    /* ─── AUTH OVERLAY ─── */
+    #auth-overlay{
+      display:none;position:fixed;inset:0;background:var(--bg);z-index:2000;
+      justify-content:center;align-items:center;padding:20px;
+    }
+    #auth-overlay.show{display:flex;}
+    .auth-card{
+      width:100%;max-width:360px;background:var(--surface);
+      border:1px solid var(--line);border-radius:var(--r);
+      padding:28px 24px;box-shadow:var(--shadow);text-align:center;
+    }
+    .auth-card h2{font-size:20px;font-weight:800;margin-bottom:6px;}
+    .auth-card p{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+    .auth-card input{text-align:center;font-size:16px;letter-spacing:.06em;margin-bottom:14px;}
+    .auth-card .err{color:var(--danger);font-size:12px;font-weight:600;margin-top:6px;display:none;}
+
     @media(max-width:400px){body{padding:12px 10px 44px;}.card{padding:18px 15px;}.hero-title{font-size:22px;}.fr,.src-row{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
-<div class="page">
+
+<!-- AUTH SCREEN -->
+<div id="auth-overlay">
+  <div class="auth-card">
+    <h2>🔑 Ключ доступу</h2>
+    <p>Введіть ключ активації, який видав адміністратор. Пристрій запам'ятає його назавжди.</p>
+    <input id="auth-input" type="password" placeholder="Ключ активації" autocomplete="off" inputmode="text">
+    <button class="btn btn-primary" id="auth-btn" type="button">Активувати</button>
+    <div class="err" id="auth-err">Невірний ключ. Зверніться до адміністратора.</div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until auth) -->
+<div class="page" id="main-app" style="display:none;">
 
   <div class="card">
     <div class="hero">
       <div>
         <div class="hero-title">Списання</div>
-        <div class="hero-sub" id="hero-sub">Форма флориста</div>
+        <div class="hero-sub">Форма флориста</div>
       </div>
       <div class="pill" id="status-pill">Готово</div>
     </div>
@@ -151,32 +181,104 @@
   </div>
 
 </div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 /* ══════════════════════════════════════════════
-   !! ЗАМІН ЦІ ЗНАЧЕННЯ на свої з Firebase Console
+   FIREBASE CONFIG — заміни на свої значення
    Project Settings → General → Your apps
 ══════════════════════════════════════════════ */
 const FIREBASE_CONFIG = {
-  apiKey:            "ТВІЙ_API_KEY",
-  authDomain:        "kzl-crm.firebaseapp.com",
-  projectId:         "kzl-crm",
-  storageBucket:     "kzl-crm.appspot.com",
-  messagingSenderId: "ТВІЙ_SENDER_ID",
-  appId:             "ТВІЙ_APP_ID",
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID",
 };
 
-/* ══════════════════════════════════════════════
-   СПИСОК КВІТОК
-══════════════════════════════════════════════ */
 const FLOWER_LIST = [
-  'Троянда','Хризантема','Тюльпан','Лілія','Гвоздика',
+  'Альстромерія', 'Гвоздика', 'Гербера', 
+  'Гіпсофіла', 'Гортензія','Евкаліпт', 
+  'Еустома','Лілія', 'Рускус', 'Салал', 
+  'Троянда', 'Тюльпан','Фісташка', 'Хризантема', 
+  'Цимбідіум', 'інше...'
 ];
 
 const MAX_IMG_DIM  = 1200;
 const JPEG_QUALITY = 0.78;
 const MAX_B64_KB   = 850;
+
+const authOverlay = document.getElementById('auth-overlay');
+const mainApp     = document.getElementById('main-app');
+const authInput   = document.getElementById('auth-input');
+const authBtn     = document.getElementById('auth-btn');
+const authErr     = document.getElementById('auth-err');
+
+function showAuth() {
+  authOverlay.classList.add('show');
+  mainApp.style.display = 'none';
+  authInput.value = '';
+  authErr.style.display = 'none';
+  authInput.focus();
+}
+
+function showApp() {
+  authOverlay.classList.remove('show');
+  mainApp.style.display = '';
+}
+
+// Перевіряємо чи ключ вже збережений
+if (localStorage.getItem('wf_auth_key')) {
+  showApp();
+} else {
+  showAuth();
+}
+
+authBtn.addEventListener('click', () => {
+  const key = authInput.value.trim();
+  if (!key) { authErr.style.display = 'block'; return; }
+
+  // Зберігаємо ключ і перевіряємо чи він працює
+  // Надсилаємо тестовий запис з _auth_key — якщо Firebase rules
+  // приймуть, значить ключ вірний. Якщо ні — видаляємо з localStorage.
+  localStorage.setItem('wf_auth_key', key);
+
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const db = firebase.firestore();
+
+  // Тестовий запис — мінімальний документ
+  db.collection('writeoffs').add({
+    _auth_key:      key,
+    _status:        'new',
+    _test_probe:    true,
+    _created_at:    new Date().toISOString(),
+    flower_name:    '_probe',
+    qty:            0,
+    price_per_unit: 0,
+    writeoff_price: 0,
+    writeoff_datetime: new Date().toISOString(),
+    salon:          '_probe',
+    created_by:     '_probe',
+    note:           'Auth probe — can be deleted by cleanup',
+  }).then(ref => {
+    // Ключ працює! Видаляємо тестовий документ
+    ref.delete().catch(() => {});
+    showApp();
+    logLine('✅ Пристрій активовано', 'ok');
+  }).catch(err => {
+    // Ключ невірний — Firebase відхилив
+    localStorage.removeItem('wf_auth_key');
+    authErr.style.display = 'block';
+    authInput.value = '';
+    logLine('❌ Ключ відхилено: ' + err.message, 'err');
+  });
+});
+
+authInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') authBtn.click();
+});
 
 /* ══ INIT FIREBASE ══ */
 firebase.initializeApp(FIREBASE_CONFIG);
@@ -184,7 +286,6 @@ const firestoreDb = firebase.firestore();
 
 /* ══ DOM ══ */
 const heroPill     = document.getElementById('status-pill');
-const heroSub      = document.getElementById('hero-sub');
 const logEl        = document.getElementById('log');
 const toastEl      = document.getElementById('toast');
 const btnSave      = document.getElementById('btn-save');
@@ -212,153 +313,156 @@ let acActive     = -1;
 
 /* ══ TOAST / LOG ══ */
 function toast(msg, type=''){
-  toastEl.textContent=msg;
-  toastEl.className=`toast show${type?' '+type:''}`;
+  toastEl.textContent = msg;
+  toastEl.className = `toast show${type ? ' ' + type : ''}`;
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>{toastEl.className='toast';},3000);
+  toastTimer = setTimeout(() => { toastEl.className = 'toast'; }, 3000);
 }
-function logLine(msg,cls=''){
-  const s=document.createElement('span');
-  if(cls)s.className=cls;
-  s.textContent='> '+msg;
+function logLine(msg, cls=''){
+  const s = document.createElement('span');
+  if (cls) s.className = cls;
+  s.textContent = '> ' + msg;
   logEl.appendChild(document.createTextNode('\n'));
   logEl.appendChild(s);
-  logEl.scrollTop=logEl.scrollHeight;
+  logEl.scrollTop = logEl.scrollHeight;
 }
-function logClear(first=''){logEl.textContent=first?'> '+first:'';}
-
-function setStatus(text,type=''){
-  heroPill.textContent=text;
-  heroPill.className=`pill${type?' '+type:''}`;
+function logClear(first=''){ logEl.textContent = first ? '> ' + first : ''; }
+function setStatus(text, type=''){
+  heroPill.textContent = text;
+  heroPill.className = `pill${type ? ' ' + type : ''}`;
 }
 
 /* ══ TOTAL ══ */
 function updateTotal(){
-  const qty=Number(inpQty.value||0),price=Number(inpPrice.value||0);
-  const t=isFinite(qty*price)?Math.round(qty*price*100)/100:0;
-  inpTotal.value=t||'';
+  const qty = Number(inpQty.value || 0), price = Number(inpPrice.value || 0);
+  inpTotal.value = isFinite(qty * price) ? Math.round(qty * price * 100) / 100 : '';
 }
-inpQty.addEventListener('input',updateTotal);
-inpPrice.addEventListener('input',updateTotal);
+inpQty.addEventListener('input', updateTotal);
+inpPrice.addEventListener('input', updateTotal);
 
 /* ══ DATETIME ══ */
 function setDefaultDt(){
-  const now=new Date();
-  inpDt.value=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  const now = new Date();
+  inpDt.value = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
 
 /* ══ AUTOCOMPLETE ══ */
 function renderAc(q){
-  const query=q.trim().toLowerCase();
-  const matches=query?FLOWER_LIST.filter(f=>f.toLowerCase().includes(query)):FLOWER_LIST;
-  if(!matches.length){acList.classList.remove('open');return;}
-  acActive=-1;
-  acList.innerHTML=matches.map(f=>`<div class="ac-item" data-val="${f.replace(/"/g,'&quot;')}">${f}</div>`).join('');
+  const query = q.trim().toLowerCase();
+  const matches = query ? FLOWER_LIST.filter(f => f.toLowerCase().includes(query)) : FLOWER_LIST;
+  if (!matches.length) { acList.classList.remove('open'); return; }
+  acActive = -1;
+  acList.innerHTML = matches.map(f => `<div class="ac-item" data-val="${f.replace(/"/g,'&quot;')}">${f}</div>`).join('');
   acList.classList.add('open');
 }
-inpFlower.addEventListener('focus',()=>renderAc(inpFlower.value));
-inpFlower.addEventListener('input',()=>renderAc(inpFlower.value));
-inpFlower.addEventListener('keydown',e=>{
-  const items=acList.querySelectorAll('.ac-item');
-  if(!items.length)return;
-  if(e.key==='ArrowDown'){acActive=Math.min(acActive+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===acActive));e.preventDefault();}
-  else if(e.key==='ArrowUp'){acActive=Math.max(acActive-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===acActive));e.preventDefault();}
-  else if(e.key==='Enter'&&acActive>=0){inpFlower.value=items[acActive].dataset.val;acList.classList.remove('open');e.preventDefault();}
-  else if(e.key==='Escape'){acList.classList.remove('open');}
+inpFlower.addEventListener('focus', () => renderAc(inpFlower.value));
+inpFlower.addEventListener('input', () => renderAc(inpFlower.value));
+inpFlower.addEventListener('keydown', e => {
+  const items = acList.querySelectorAll('.ac-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') { acActive = Math.min(acActive + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('active', i === acActive)); e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { acActive = Math.max(acActive - 1, 0); items.forEach((el, i) => el.classList.toggle('active', i === acActive)); e.preventDefault(); }
+  else if (e.key === 'Enter' && acActive >= 0) { inpFlower.value = items[acActive].dataset.val; acList.classList.remove('open'); e.preventDefault(); }
+  else if (e.key === 'Escape') { acList.classList.remove('open'); }
 });
-acList.addEventListener('mousedown',e=>{
-  const item=e.target.closest('.ac-item');
-  if(!item)return;
-  inpFlower.value=item.dataset.val;
+acList.addEventListener('mousedown', e => {
+  const item = e.target.closest('.ac-item');
+  if (!item) return;
+  inpFlower.value = item.dataset.val;
   acList.classList.remove('open');
 });
-document.addEventListener('click',e=>{
-  if(!inpFlower.contains(e.target)&&!acList.contains(e.target))acList.classList.remove('open');
+document.addEventListener('click', e => {
+  if (!inpFlower.contains(e.target) && !acList.contains(e.target)) acList.classList.remove('open');
 });
 
 /* ══ PHOTO ══ */
-document.getElementById('btn-camera') .addEventListener('click',()=>inpCamera.click());
-document.getElementById('btn-gallery').addEventListener('click',()=>inpGallery.click());
-inpCamera .addEventListener('change',e=>processFile(e.target.files?.[0]));
-inpGallery.addEventListener('change',e=>processFile(e.target.files?.[0]));
-document.getElementById('btn-reset-photo').addEventListener('click',resetPhoto);
+document.getElementById('btn-camera') .addEventListener('click', () => inpCamera.click());
+document.getElementById('btn-gallery').addEventListener('click', () => inpGallery.click());
+inpCamera .addEventListener('change', e => processFile(e.target.files?.[0]));
+inpGallery.addEventListener('change', e => processFile(e.target.files?.[0]));
+document.getElementById('btn-reset-photo').addEventListener('click', resetPhoto);
 
 function resetPhoto(){
-  currentPhoto=null;inpCamera.value='';inpGallery.value='';
-  prevImg.removeAttribute('src');prevName.textContent='';
+  currentPhoto = null; inpCamera.value = ''; inpGallery.value = '';
+  prevImg.removeAttribute('src'); prevName.textContent = '';
   prevWrap.classList.remove('show');
-  photoChooser.style.display='';
+  photoChooser.style.display = '';
   progWrap.classList.remove('show');
 }
 
 function loadImg(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onerror=()=>reject(new Error('Не вдалося прочитати файл'));
-    reader.onload=()=>{
-      const img=new Image();
-      img.onerror=()=>reject(new Error('Не вдалося відкрити зображення'));
-      img.onload=()=>resolve({img,dataUrl:reader.result});
-      img.src=reader.result;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Не вдалося прочитати файл'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Не вдалося відкрити зображення'));
+      img.onload = () => resolve({ img, dataUrl: reader.result });
+      img.src = reader.result;
     };
     reader.readAsDataURL(file);
   });
 }
 
 function compress(img){
-  const ratio=Math.min(1,MAX_IMG_DIM/Math.max(img.width,img.height));
-  const w=Math.max(1,Math.round(img.width*ratio)),h=Math.max(1,Math.round(img.height*ratio));
-  const canvas=document.createElement('canvas');
-  canvas.width=w;canvas.height=h;
-  canvas.getContext('2d',{alpha:false}).drawImage(img,0,0,w,h);
-  return canvas.toDataURL('image/jpeg',JPEG_QUALITY);
+  const ratio = Math.min(1, MAX_IMG_DIM / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * ratio));
+  const h = Math.max(1, Math.round(img.height * ratio));
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d', { alpha: false }).drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
 }
 
 async function processFile(file){
-  if(!file)return;
-  progWrap.classList.add('show');setProgress(10);
-  try{
-    const{img}=await loadImg(file);setProgress(40);
-    const dataUrl=compress(img);setProgress(70);
-    const base64=dataUrl.split(',')[1]||'';
-    const sizeKB=Math.ceil((base64.length*3)/4/1024);
-    if(sizeKB>MAX_B64_KB)throw new Error(`Фото завелике (${sizeKB}KB > ${MAX_B64_KB}KB)`);
-    currentPhoto={base64,mimeType:'image/jpeg',name:file.name||'photo.jpg'};
-    prevImg.src=dataUrl;
-    prevName.textContent=`${file.name} · ${sizeKB}KB`;
+  if (!file) return;
+  progWrap.classList.add('show'); setProgress(10);
+  try {
+    const { img } = await loadImg(file); setProgress(40);
+    const dataUrl = compress(img); setProgress(70);
+    const base64 = dataUrl.split(',')[1] || '';
+    const sizeKB = Math.ceil((base64.length * 3) / 4 / 1024);
+    if (sizeKB > MAX_B64_KB) throw new Error(`Фото завелике (${sizeKB}KB > ${MAX_B64_KB}KB)`);
+    currentPhoto = { base64, mimeType: 'image/jpeg', name: file.name || 'photo.jpg' };
+    prevImg.src = dataUrl;
+    prevName.textContent = `${file.name} · ${sizeKB}KB`;
     prevWrap.classList.add('show');
-    photoChooser.style.display='none';
+    photoChooser.style.display = 'none';
     setProgress(100);
-    setTimeout(()=>progWrap.classList.remove('show'),600);
-    toast('Фото готове · '+sizeKB+'KB','ok');
-  }catch(e){resetPhoto();toast(e.message,'err');}
+    setTimeout(() => progWrap.classList.remove('show'), 600);
+    toast('Фото готове · ' + sizeKB + 'KB', 'ok');
+  } catch (e) { resetPhoto(); toast(e.message, 'err'); }
 }
 
-function setProgress(pct){progBar.style.width=pct+'%';}
+function setProgress(pct){ progBar.style.width = pct + '%'; }
 
 /* ══ SAVE → FIRESTORE ══ */
-btnSave.addEventListener('click',async()=>{
-  if(!currentPhoto)           {toast('Додай фото.','warn');return;}
-  if(!inpSalon.value)         {toast('Обери салон.','warn');return;}
-  if(!inpFlower.value.trim()) {toast('Введи назву квітки.','warn');return;}
-  if(Number(inpQty.value||0)<=0){toast('Введи кількість > 0.','warn');return;}
-  if(!inpAuthor.value.trim()) {toast("Введи ім'я.",'warn');return;}
+btnSave.addEventListener('click', async () => {
+  const authKey = localStorage.getItem('wf_auth_key');
+  if (!authKey) { toast('Сесія втрачена. Оновіть сторінку.', 'err'); showAuth(); return; }
 
-  btnSave.disabled=true;
+  if (!currentPhoto)            { toast('Додай фото.', 'warn'); return; }
+  if (!inpSalon.value)          { toast('Обери салон.', 'warn'); return; }
+  if (!inpFlower.value.trim())  { toast('Введи назву квітки.', 'warn'); return; }
+  if (Number(inpQty.value || 0) <= 0) { toast('Кількість > 0.', 'warn'); return; }
+  if (!inpAuthor.value.trim())  { toast("Введи ім'я.", 'warn'); return; }
+
+  btnSave.disabled = true;
   updateTotal();
   logClear('Відправка в Firebase...');
-  setStatus('Відправка...','warn');
+  setStatus('Відправка...', 'warn');
 
-  const qty=Number(inpQty.value);
-  const pricePerUnit=Number(inpPrice.value||0);
+  const qty = Number(inpQty.value);
+  const pricePerUnit = Number(inpPrice.value || 0);
 
-  const doc={
+  const doc = {
+    _auth_key:         authKey,           // ← ключ з localStorage
     _status:           'new',
     _created_at:       new Date().toISOString(),
     flower_name:       inpFlower.value.trim(),
     qty,
     price_per_unit:    pricePerUnit,
-    writeoff_price:    Math.round(qty*pricePerUnit*100)/100,
+    writeoff_price:    Math.round(qty * pricePerUnit * 100) / 100,
     writeoff_datetime: new Date(inpDt.value).toISOString(),
     salon:             inpSalon.value.trim(),
     created_by:        inpAuthor.value.trim(),
@@ -368,18 +472,18 @@ btnSave.addEventListener('click',async()=>{
     photo_name:        currentPhoto.name,
   };
 
-  try{
-    const ref=await firestoreDb.collection('writeoffs').add(doc);
-    logLine('✅ Збережено! doc_id: '+ref.id,'ok');
-    logLine(`${doc.flower_name} · ${doc.qty} шт · ${doc.writeoff_price} грн`,'info');
-    toast('Списання збережено!','ok');
-    setStatus('Готово','');
-    setTimeout(()=>window.location.reload(),1400);
-  }catch(err){
-    logLine('ПОМИЛКА: '+err.message,'err');
-    toast(err.message,'err');
-    setStatus('Помилка','err');
-    btnSave.disabled=false;
+  try {
+    const ref = await firestoreDb.collection('writeoffs').add(doc);
+    logLine('✅ Збережено! doc_id: ' + ref.id, 'ok');
+    logLine(`${doc.flower_name} · ${doc.qty} шт · ${doc.writeoff_price} грн`, 'info');
+    toast('Списання збережено!', 'ok');
+    setStatus('Готово', '');
+    setTimeout(() => window.location.reload(), 1400);
+  } catch (err) {
+    logLine('ПОМИЛКА: ' + err.message, 'err');
+    toast(err.message, 'err');
+    setStatus('Помилка', 'err');
+    btnSave.disabled = false;
   }
 });
 
