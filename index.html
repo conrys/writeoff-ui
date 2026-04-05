@@ -190,12 +190,12 @@
    Project Settings → General → Your apps
 ══════════════════════════════════════════════ */
 const FIREBASE_CONFIG = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT.firebaseapp.com",
-  projectId:         "YOUR_PROJECT",
-  storageBucket:     "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID",
+  apiKey:            "AIzaSyCkvOZW77P5f70NeC5VU8AQ5q4jKFBnUwk",
+  authDomain:        "kzl-crm.firebaseapp.com,
+  projectId:         "kzl-crm",
+  storageBucket:     "kzl-crm.firebasestorage.app",
+  messagingSenderId: "1092229511761",
+  appId:             "1:1092229511761:web:6c9a052bee36763b7ed670",
 };
 
 const FLOWER_LIST = [
@@ -265,6 +265,8 @@ authBtn.addEventListener('click', () => {
   }).then(ref => {
     // Ключ працює! Видаляємо тестовий документ
     ref.delete().catch(() => {});
+
+    window.location.reload();
     showApp();
     logLine('✅ Пристрій активовано', 'ok');
   }).catch(err => {
