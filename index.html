@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Списання · KZL</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
@@ -127,13 +128,13 @@
       <label>Фото <span class="hint">(до 5 шт)</span></label>
       <div class="photo-area" style="margin-top:6px;">
         <div class="photo-grid" id="photo-grid">
-          <!-- Photo thumbs will be rendered here -->
           <div class="photo-add" id="btn-add-photo">
             <span class="ic">📷</span>
-            Додати
+            Додати фото
           </div>
         </div>
-        <input id="inp-photo" type="file" accept="image/*" capture="environment" class="hidden">
+        <!-- Без capture — на телефоні дає вибір: камера чи галерея -->
+        <input id="inp-photo" type="file" accept="image/*" class="hidden">
         <div class="photo-count" id="photo-count"></div>
         <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
       </div>
