@@ -47,15 +47,19 @@
     .btn-ghost{background:var(--surface-2);color:var(--muted);border:1px solid var(--line);}
     .btn-sm{padding:9px 14px;font-size:13px;width:auto;border-radius:10px;}
     .btns{display:grid;gap:9px;}
+
+    /* ─── MULTI-PHOTO AREA ─── */
     .photo-area{border:1.5px dashed rgba(16,185,129,.28);border-radius:20px;background:linear-gradient(180deg,rgba(16,185,129,.05) 0%,transparent 100%);padding:13px;}
-    .src-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    .src-btn{display:grid;place-items:center;gap:6px;padding:18px 8px;border-radius:16px;border:1.5px dashed rgba(16,185,129,.22);background:var(--surface-2);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1.3;text-align:center;transition:border-color .13s,background .13s;}
-    .src-btn .ic{font-size:28px;line-height:1;}
-    .src-btn:hover{border-color:var(--accent);background:var(--accent-glow);}
-    .prev-wrap{display:none;margin-top:12px;}
-    .prev-wrap.show{display:block;}
-    .prev-wrap img{width:100%;max-height:300px;object-fit:cover;border-radius:16px;display:block;}
-    .prev-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;color:var(--muted);font-size:12px;}
+    .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-top:10px;}
+    .photo-thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;border:1.5px solid var(--line);background:var(--surface-2);}
+    .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .photo-thumb .remove-btn{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:rgba(239,68,68,.9);color:#fff;border:none;font-size:14px;cursor:pointer;display:grid;place-items:center;line-height:1;opacity:0;transition:opacity .15s;}
+    .photo-thumb:hover .remove-btn{opacity:1;}
+    .photo-add{aspect-ratio:1;border-radius:12px;border:1.5px dashed rgba(16,185,129,.28);background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--accent);font-size:12px;font-weight:700;transition:border-color .13s,background .13s;}
+    .photo-add:hover{border-color:var(--accent);background:var(--accent-glow);}
+    .photo-add .ic{font-size:28px;line-height:1;}
+    .photo-count{font-size:11px;color:var(--muted);margin-top:6px;text-align:center;}
+
     .prog-wrap{display:none;height:4px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin-top:10px;}
     .prog-wrap.show{display:block;}
     .prog-bar{height:100%;background:var(--accent);border-radius:999px;width:0%;transition:width .3s ease;}
@@ -69,23 +73,26 @@
     .section-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:11px;}
     .hidden{display:none!important;}
 
+    /* ─── LIGHTBOX ─── */
+    .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;justify-content:center;align-items:center;padding:20px;}
+    .lightbox.show{display:flex;}
+    .lightbox img{max-width:100%;max-height:85vh;object-fit:contain;border-radius:8px;}
+    .lightbox-close{position:absolute;top:16px;right:20px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:24px;cursor:pointer;display:grid;place-items:center;}
+    .lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;display:grid;place-items:center;}
+    .lightbox-prev{left:16px;}
+    .lightbox-next{right:16px;}
+    .lightbox-counter{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;font-weight:600;}
+
     /* ─── AUTH OVERLAY ─── */
-    #auth-overlay{
-      display:none;position:fixed;inset:0;background:var(--bg);z-index:2000;
-      justify-content:center;align-items:center;padding:20px;
-    }
+    #auth-overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:2000;justify-content:center;align-items:center;padding:20px;}
     #auth-overlay.show{display:flex;}
-    .auth-card{
-      width:100%;max-width:360px;background:var(--surface);
-      border:1px solid var(--line);border-radius:var(--r);
-      padding:28px 24px;box-shadow:var(--shadow);text-align:center;
-    }
+    .auth-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:28px 24px;box-shadow:var(--shadow);text-align:center;}
     .auth-card h2{font-size:20px;font-weight:800;margin-bottom:6px;}
     .auth-card p{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
     .auth-card input{text-align:center;font-size:16px;letter-spacing:.06em;margin-bottom:14px;}
     .auth-card .err{color:var(--danger);font-size:12px;font-weight:600;margin-top:6px;display:none;}
 
-    @media(max-width:400px){body{padding:12px 10px 44px;}.card{padding:18px 15px;}.hero-title{font-size:22px;}.fr,.src-row{grid-template-columns:1fr;}}
+    @media(max-width:400px){body{padding:12px 10px 44px;}.card{padding:18px 15px;}.hero-title{font-size:22px;}.fr{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
@@ -117,21 +124,17 @@
   <div class="card fg" id="writeoff-form">
 
     <div>
-      <label>Фото</label>
+      <label>Фото <span class="hint">(до 5 шт)</span></label>
       <div class="photo-area" style="margin-top:6px;">
-        <div class="src-row" id="photo-chooser">
-          <button class="src-btn" id="btn-camera"  type="button"><span class="ic">📷</span>Камера</button>
-          <button class="src-btn" id="btn-gallery" type="button"><span class="ic">🖼️</span>Галерея</button>
-        </div>
-        <input id="inp-camera"  type="file" accept="image/*" capture="environment" class="hidden">
-        <input id="inp-gallery" type="file" accept="image/*" class="hidden">
-        <div class="prev-wrap" id="prev-wrap">
-          <img id="prev-img" alt="">
-          <div class="prev-meta">
-            <span id="prev-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;"></span>
-            <button class="btn btn-ghost btn-sm" id="btn-reset-photo" type="button">Замінити</button>
+        <div class="photo-grid" id="photo-grid">
+          <!-- Photo thumbs will be rendered here -->
+          <div class="photo-add" id="btn-add-photo">
+            <span class="ic">📷</span>
+            Додати
           </div>
         </div>
+        <input id="inp-photo" type="file" accept="image/*" capture="environment" class="hidden">
+        <div class="photo-count" id="photo-count"></div>
         <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
       </div>
     </div>
@@ -182,12 +185,20 @@
 
 </div>
 
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lb-close">×</button>
+  <button class="lightbox-nav lightbox-prev" id="lb-prev">‹</button>
+  <img id="lb-img" alt="">
+  <button class="lightbox-nav lightbox-next" id="lb-next">›</button>
+  <div class="lightbox-counter" id="lb-counter"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 /* ══════════════════════════════════════════════
-   FIREBASE CONFIG — заміни на свої значення
-   Project Settings → General → Your apps
+   FIREBASE CONFIG
 ══════════════════════════════════════════════ */
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyCkvOZW77P5f70NeC5VU8AQ5q4jKFBnUwk",
@@ -199,299 +210,264 @@ const FIREBASE_CONFIG = {
 };
 
 const FLOWER_LIST = [
-  'Альстромерія', 'Гвоздика', 'Гербера', 
-  'Гіпсофіла', 'Гортензія','Евкаліпт', 
-  'Еустома','Лілія', 'Рускус', 'Салал', 
-  'Троянда', 'Тюльпан','Фісташка', 'Хризантема', 
-  'Цимбідіум', 'інше...'
+  'Альстромерія','Гвоздика','Гербера','Гіпсофіла','Гортензія',
+  'Евкаліпт','Еустома','Лілія','Рускус','Салал',
+  'Троянда','Тюльпан','Фісташка','Хризантема','Цимбідіум','інше...'
 ];
 
 const MAX_IMG_DIM  = 1200;
 const JPEG_QUALITY = 0.78;
 const MAX_B64_KB   = 850;
+const MAX_PHOTOS   = 5;
 
+/* ── Auth ─ */
 const authOverlay = document.getElementById('auth-overlay');
 const mainApp     = document.getElementById('main-app');
 const authInput   = document.getElementById('auth-input');
 const authBtn     = document.getElementById('auth-btn');
 const authErr     = document.getElementById('auth-err');
 
-function showAuth() {
-  authOverlay.classList.add('show');
-  mainApp.style.display = 'none';
-  authInput.value = '';
-  authErr.style.display = 'none';
-  authInput.focus();
-}
+function showAuth(){ authOverlay.classList.add('show'); mainApp.style.display='none'; authInput.value=''; authErr.style.display='none'; authInput.focus(); }
+function showApp(){ authOverlay.classList.remove('show'); mainApp.style.display=''; }
 
-function showApp() {
-  authOverlay.classList.remove('show');
-  mainApp.style.display = '';
-}
+if(localStorage.getItem('wf_auth_key')){ showApp(); } else { showAuth(); }
 
-// Перевіряємо чи ключ вже збережений
-if (localStorage.getItem('wf_auth_key')) {
-  showApp();
-} else {
-  showAuth();
-}
-
-authBtn.addEventListener('click', () => {
-  const key = authInput.value.trim();
-  if (!key) { authErr.style.display = 'block'; return; }
-
-  // Зберігаємо ключ і перевіряємо чи він працює
-  // Надсилаємо тестовий запис з _auth_key — якщо Firebase rules
-  // приймуть, значить ключ вірний. Якщо ні — видаляємо з localStorage.
-  localStorage.setItem('wf_auth_key', key);
-
+authBtn.addEventListener('click',()=>{
+  const key=authInput.value.trim();
+  if(!key){authErr.style.display='block';return;}
+  localStorage.setItem('wf_auth_key',key);
   firebase.initializeApp(FIREBASE_CONFIG);
-  const db = firebase.firestore();
-
-  // Тестовий запис — мінімальний документ
+  const db=firebase.firestore();
   db.collection('writeoffs').add({
-    _auth_key:      key,
-    _status:        'new',
-    _test_probe:    true,
-    _created_at:    new Date().toISOString(),
-    flower_name:    '_probe',
-    qty:            0,
-    price_per_unit: 0,
-    writeoff_price: 0,
-    writeoff_datetime: new Date().toISOString(),
-    salon:          '_probe',
-    created_by:     '_probe',
-    note:           'Auth probe — can be deleted by cleanup',
-  }).then(ref => {
-    // Ключ працює! Видаляємо тестовий документ
-    ref.delete().catch(() => {});
-
-    window.location.reload();
-    showApp();
-    logLine('✅ Пристрій активовано', 'ok');
-  }).catch(err => {
-    // Ключ невірний — Firebase відхилив
-    localStorage.removeItem('wf_auth_key');
-    authErr.style.display = 'block';
-    authInput.value = '';
-    logLine('❌ Ключ відхилено: ' + err.message, 'err');
-  });
+    _auth_key:key,_status:'new',_test_probe:true,_created_at:new Date().toISOString(),
+    flower_name:'_probe',qty:0,price_per_unit:0,writeoff_price:0,
+    writeoff_datetime:new Date().toISOString(),salon:'_probe',created_by:'_probe',
+    note:'Auth probe'
+  }).then(ref=>{ ref.delete().catch(()=>{}); showApp(); logLine('✅ Пристрій активовано','ok'); })
+    .catch(()=>{ localStorage.removeItem('wf_auth_key'); authErr.style.display='block'; authInput.value=''; });
 });
-
-authInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') authBtn.click();
-});
+authInput.addEventListener('keydown',e=>{ if(e.key==='Enter') authBtn.click(); });
 
 /* ══ INIT FIREBASE ══ */
 firebase.initializeApp(FIREBASE_CONFIG);
 const firestoreDb = firebase.firestore();
 
 /* ══ DOM ══ */
-const heroPill     = document.getElementById('status-pill');
-const logEl        = document.getElementById('log');
-const toastEl      = document.getElementById('toast');
-const btnSave      = document.getElementById('btn-save');
-const inpFlower    = document.getElementById('inp-flower');
-const acList       = document.getElementById('ac-list');
-const inpQty       = document.getElementById('inp-qty');
-const inpDt        = document.getElementById('inp-dt');
-const inpPrice     = document.getElementById('inp-price');
-const inpTotal     = document.getElementById('inp-total');
-const inpSalon     = document.getElementById('inp-salon');
-const inpAuthor    = document.getElementById('inp-author');
-const inpNote      = document.getElementById('inp-note');
-const prevWrap     = document.getElementById('prev-wrap');
-const prevImg      = document.getElementById('prev-img');
-const prevName     = document.getElementById('prev-name');
-const photoChooser = document.getElementById('photo-chooser');
-const inpCamera    = document.getElementById('inp-camera');
-const inpGallery   = document.getElementById('inp-gallery');
-const progWrap     = document.getElementById('prog-wrap');
-const progBar      = document.getElementById('prog-bar');
+const heroPill = document.getElementById('status-pill');
+const logEl    = document.getElementById('log');
+const toastEl  = document.getElementById('toast');
+const btnSave  = document.getElementById('btn-save');
+const inpFlower= document.getElementById('inp-flower');
+const acList   = document.getElementById('ac-list');
+const inpQty   = document.getElementById('inp-qty');
+const inpDt    = document.getElementById('inp-dt');
+const inpPrice = document.getElementById('inp-price');
+const inpTotal = document.getElementById('inp-total');
+const inpSalon = document.getElementById('inp-salon');
+const inpAuthor= document.getElementById('inp-author');
+const inpNote  = document.getElementById('inp-note');
+const photoGrid= document.getElementById('photo-grid');
+const btnAdd   = document.getElementById('btn-add-photo');
+const inpPhoto = document.getElementById('inp-photo');
+const progWrap = document.getElementById('prog-wrap');
+const progBar  = document.getElementById('prog-bar');
+const photoCnt = document.getElementById('photo-count');
 
-let currentPhoto = null;
-let toastTimer   = null;
-let acActive     = -1;
+/* ══ MULTI-PHOTO STATE ══ */
+let photos = []; // [{base64, mimeType, name, dataUrl}, ...]
 
 /* ══ TOAST / LOG ══ */
-function toast(msg, type=''){
-  toastEl.textContent = msg;
-  toastEl.className = `toast show${type ? ' ' + type : ''}`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { toastEl.className = 'toast'; }, 3000);
-}
-function logLine(msg, cls=''){
-  const s = document.createElement('span');
-  if (cls) s.className = cls;
-  s.textContent = '> ' + msg;
-  logEl.appendChild(document.createTextNode('\n'));
-  logEl.appendChild(s);
-  logEl.scrollTop = logEl.scrollHeight;
-}
-function logClear(first=''){ logEl.textContent = first ? '> ' + first : ''; }
-function setStatus(text, type=''){
-  heroPill.textContent = text;
-  heroPill.className = `pill${type ? ' ' + type : ''}`;
-}
+function toast(msg,type=''){ toastEl.textContent=msg; toastEl.className=`toast show${type?' '+type:''}`; clearTimeout(window._tt); window._tt=setTimeout(()=>{toastEl.className='toast';},3000); }
+function logLine(msg,cls=''){ const s=document.createElement('span'); if(cls)s.className=cls; s.textContent='> '+msg; logEl.appendChild(document.createTextNode('\n')); logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
+function logClear(first=''){ logEl.textContent=first?'> '+first:''; }
+function setStatus(text,type=''){ heroPill.textContent=text; heroPill.className=`pill${type?' '+type:''}`; }
 
 /* ══ TOTAL ══ */
-function updateTotal(){
-  const qty = Number(inpQty.value || 0), price = Number(inpPrice.value || 0);
-  inpTotal.value = isFinite(qty * price) ? Math.round(qty * price * 100) / 100 : '';
-}
-inpQty.addEventListener('input', updateTotal);
-inpPrice.addEventListener('input', updateTotal);
+function updateTotal(){ const q=Number(inpQty.value||0),p=Number(inpPrice.value||0); inpTotal.value=isFinite(q*p)?Math.round(q*p*100)/100:''; }
+inpQty.addEventListener('input',updateTotal);
+inpPrice.addEventListener('input',updateTotal);
 
 /* ══ DATETIME ══ */
-function setDefaultDt(){
-  const now = new Date();
-  inpDt.value = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
+function setDefaultDt(){ const n=new Date(); inpDt.value=new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,16); }
 
 /* ══ AUTOCOMPLETE ══ */
-function renderAc(q){
-  const query = q.trim().toLowerCase();
-  const matches = query ? FLOWER_LIST.filter(f => f.toLowerCase().includes(query)) : FLOWER_LIST;
-  if (!matches.length) { acList.classList.remove('open'); return; }
-  acActive = -1;
-  acList.innerHTML = matches.map(f => `<div class="ac-item" data-val="${f.replace(/"/g,'&quot;')}">${f}</div>`).join('');
-  acList.classList.add('open');
+function renderAc(q){ const query=q.trim().toLowerCase(); const matches=query?FLOWER_LIST.filter(f=>f.toLowerCase().includes(query)):FLOWER_LIST; if(!matches.length){acList.classList.remove('open');return;} acActive=-1; acList.innerHTML=matches.map(f=>`<div class="ac-item" data-val="${f.replace(/"/g,'&quot;')}">${f}</div>`).join(''); acList.classList.add('open'); }
+let acActive=-1;
+inpFlower.addEventListener('focus',()=>renderAc(inpFlower.value));
+inpFlower.addEventListener('input',()=>renderAc(inpFlower.value));
+inpFlower.addEventListener('keydown',e=>{
+  const items=acList.querySelectorAll('.ac-item'); if(!items.length)return;
+  if(e.key==='ArrowDown'){acActive=Math.min(acActive+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===acActive));e.preventDefault();}
+  else if(e.key==='ArrowUp'){acActive=Math.max(acActive-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===acActive));e.preventDefault();}
+  else if(e.key==='Enter'&&acActive>=0){inpFlower.value=items[acActive].dataset.val;acList.classList.remove('open');e.preventDefault();}
+  else if(e.key==='Escape'){acList.classList.remove('open');}
+});
+acList.addEventListener('mousedown',e=>{ const item=e.target.closest('.ac-item'); if(!item)return; inpFlower.value=item.dataset.val; acList.classList.remove('open'); });
+document.addEventListener('click',e=>{ if(!inpFlower.contains(e.target)&&!acList.contains(e.target))acList.classList.remove('open'); });
+
+/* ══ RENDER PHOTO GRID ══ */
+function renderPhotos(){
+  // Remove all thumbs but keep the add button
+  photoGrid.querySelectorAll('.photo-thumb').forEach(el=>el.remove());
+  
+  photos.forEach((p,i)=>{
+    const thumb = document.createElement('div');
+    thumb.className = 'photo-thumb';
+    thumb.innerHTML = `
+      <img src="${p.dataUrl}" alt="Фото ${i+1}">
+      <button class="remove-btn" data-idx="${i}" type="button">×</button>
+    `;
+    thumb.querySelector('img').addEventListener('click',()=>openLightbox(i));
+    thumb.querySelector('.remove-btn').addEventListener('click',(e)=>{
+      e.stopPropagation();
+      photos.splice(i,1);
+      renderPhotos();
+    });
+    photoGrid.insertBefore(thumb, btnAdd);
+  });
+
+  // Update count
+  photoCnt.textContent = photos.length > 0 ? `${photos.length} фото` : '';
+  
+  // Show/hide add button based on limit
+  btnAdd.style.display = photos.length >= MAX_PHOTOS ? 'none' : '';
 }
-inpFlower.addEventListener('focus', () => renderAc(inpFlower.value));
-inpFlower.addEventListener('input', () => renderAc(inpFlower.value));
-inpFlower.addEventListener('keydown', e => {
-  const items = acList.querySelectorAll('.ac-item');
-  if (!items.length) return;
-  if (e.key === 'ArrowDown') { acActive = Math.min(acActive + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('active', i === acActive)); e.preventDefault(); }
-  else if (e.key === 'ArrowUp') { acActive = Math.max(acActive - 1, 0); items.forEach((el, i) => el.classList.toggle('active', i === acActive)); e.preventDefault(); }
-  else if (e.key === 'Enter' && acActive >= 0) { inpFlower.value = items[acActive].dataset.val; acList.classList.remove('open'); e.preventDefault(); }
-  else if (e.key === 'Escape') { acList.classList.remove('open'); }
-});
-acList.addEventListener('mousedown', e => {
-  const item = e.target.closest('.ac-item');
-  if (!item) return;
-  inpFlower.value = item.dataset.val;
-  acList.classList.remove('open');
-});
-document.addEventListener('click', e => {
-  if (!inpFlower.contains(e.target) && !acList.contains(e.target)) acList.classList.remove('open');
+
+/* ══ LIGHTBOX ══ */
+const lightbox = document.getElementById('lightbox');
+const lbImg    = document.getElementById('lb-img');
+const lbCounter= document.getElementById('lb-counter');
+let lbIndex = 0;
+
+function openLightbox(idx){
+  lbIndex = idx;
+  lbImg.src = photos[idx].dataUrl;
+  lbCounter.textContent = `${idx+1} / ${photos.length}`;
+  lightbox.classList.add('show');
+  document.getElementById('lb-prev').style.display = photos.length > 1 ? '' : 'none';
+  document.getElementById('lb-next').style.display = photos.length > 1 ? '' : 'none';
+}
+function closeLightbox(){ lightbox.classList.remove('show'); }
+function lbPrev(){ lbIndex=(lbIndex-1+photos.length)%photos.length; lbImg.src=photos[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${photos.length}`; }
+function lbNext(){ lbIndex=(lbIndex+1)%photos.length; lbImg.src=photos[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${photos.length}`; }
+
+document.getElementById('lb-close').addEventListener('click',closeLightbox);
+document.getElementById('lb-prev').addEventListener('click',lbPrev);
+document.getElementById('lb-next').addEventListener('click',lbNext);
+lightbox.addEventListener('click',e=>{ if(e.target===lightbox) closeLightbox(); });
+document.addEventListener('keydown',e=>{
+  if(!lightbox.classList.contains('show'))return;
+  if(e.key==='Escape')closeLightbox();
+  if(e.key==='ArrowLeft')lbPrev();
+  if(e.key==='ArrowRight')lbNext();
 });
 
-/* ══ PHOTO ══ */
-document.getElementById('btn-camera') .addEventListener('click', () => inpCamera.click());
-document.getElementById('btn-gallery').addEventListener('click', () => inpGallery.click());
-inpCamera .addEventListener('change', e => processFile(e.target.files?.[0]));
-inpGallery.addEventListener('change', e => processFile(e.target.files?.[0]));
-document.getElementById('btn-reset-photo').addEventListener('click', resetPhoto);
-
-function resetPhoto(){
-  currentPhoto = null; inpCamera.value = ''; inpGallery.value = '';
-  prevImg.removeAttribute('src'); prevName.textContent = '';
-  prevWrap.classList.remove('show');
-  photoChooser.style.display = '';
-  progWrap.classList.remove('show');
-}
+/* ══ ADD PHOTO ══ */
+btnAdd.addEventListener('click',()=>inpPhoto.click());
+inpPhoto.addEventListener('change',e=>{ if(e.target.files?.[0]) processFile(e.target.files[0]); });
 
 function loadImg(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Не вдалося прочитати файл'));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('Не вдалося відкрити зображення'));
-      img.onload = () => resolve({ img, dataUrl: reader.result });
-      img.src = reader.result;
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('Не вдалося прочитати файл'));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('Не вдалося відкрити зображення'));
+      img.onload=()=>resolve({img,dataUrl:reader.result});
+      img.src=reader.result;
     };
     reader.readAsDataURL(file);
   });
 }
 
 function compress(img){
-  const ratio = Math.min(1, MAX_IMG_DIM / Math.max(img.width, img.height));
-  const w = Math.max(1, Math.round(img.width * ratio));
-  const h = Math.max(1, Math.round(img.height * ratio));
-  const canvas = document.createElement('canvas');
-  canvas.width = w; canvas.height = h;
-  canvas.getContext('2d', { alpha: false }).drawImage(img, 0, 0, w, h);
-  return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+  const ratio=Math.min(1,MAX_IMG_DIM/Math.max(img.width,img.height));
+  const w=Math.max(1,Math.round(img.width*ratio));
+  const h=Math.max(1,Math.round(img.height*ratio));
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  c.getContext('2d',{alpha:false}).drawImage(img,0,0,w,h);
+  return c.toDataURL('image/jpeg',JPEG_QUALITY);
 }
 
 async function processFile(file){
-  if (!file) return;
+  if(!file)return;
+  if(photos.length>=MAX_PHOTOS){toast(`Максимум ${MAX_PHOTOS} фото`,'warn');return;}
   progWrap.classList.add('show'); setProgress(10);
-  try {
-    const { img } = await loadImg(file); setProgress(40);
-    const dataUrl = compress(img); setProgress(70);
-    const base64 = dataUrl.split(',')[1] || '';
-    const sizeKB = Math.ceil((base64.length * 3) / 4 / 1024);
-    if (sizeKB > MAX_B64_KB) throw new Error(`Фото завелике (${sizeKB}KB > ${MAX_B64_KB}KB)`);
-    currentPhoto = { base64, mimeType: 'image/jpeg', name: file.name || 'photo.jpg' };
-    prevImg.src = dataUrl;
-    prevName.textContent = `${file.name} · ${sizeKB}KB`;
-    prevWrap.classList.add('show');
-    photoChooser.style.display = 'none';
+  try{
+    const {img}=await loadImg(file); setProgress(40);
+    const dataUrl=compress(img); setProgress(70);
+    const base64=dataUrl.split(',')[1]||'';
+    const sizeKB=Math.ceil((base64.length*3)/4/1024);
+    if(sizeKB>MAX_B64_KB)throw new Error(`Фото завелике (${sizeKB}KB > ${MAX_B64_KB}KB)`);
+    photos.push({base64,mimeType:'image/jpeg',name:file.name||'photo.jpg',dataUrl});
+    renderPhotos();
     setProgress(100);
-    setTimeout(() => progWrap.classList.remove('show'), 600);
-    toast('Фото готове · ' + sizeKB + 'KB', 'ok');
-  } catch (e) { resetPhoto(); toast(e.message, 'err'); }
+    setTimeout(()=>progWrap.classList.remove('show'),600);
+    toast(`Фото додано (${photos.length}/${MAX_PHOTOS})`,'ok');
+  }catch(e){ toast(e.message,'err'); }
+  inpPhoto.value='';
 }
 
-function setProgress(pct){ progBar.style.width = pct + '%'; }
+function setProgress(pct){ progBar.style.width=pct+'%'; }
 
 /* ══ SAVE → FIRESTORE ══ */
-btnSave.addEventListener('click', async () => {
-  const authKey = localStorage.getItem('wf_auth_key');
-  if (!authKey) { toast('Сесія втрачена. Оновіть сторінку.', 'err'); showAuth(); return; }
+btnSave.addEventListener('click',async()=>{
+  const authKey=localStorage.getItem('wf_auth_key');
+  if(!authKey){toast('Сесія втрачена. Оновіть сторінку.','err');showAuth();return;}
 
-  if (!currentPhoto)            { toast('Додай фото.', 'warn'); return; }
-  if (!inpSalon.value)          { toast('Обери салон.', 'warn'); return; }
-  if (!inpFlower.value.trim())  { toast('Введи назву квітки.', 'warn'); return; }
-  if (Number(inpQty.value || 0) <= 0) { toast('Кількість > 0.', 'warn'); return; }
-  if (!inpAuthor.value.trim())  { toast("Введи ім'я.", 'warn'); return; }
+  if(!photos.length)               {toast('Додай хоча б одне фото.','warn');return;}
+  if(!inpSalon.value)              {toast('Обери салон.','warn');return;}
+  if(!inpFlower.value.trim())      {toast('Введи назву квітки.','warn');return;}
+  if(Number(inpQty.value||0)<=0)   {toast('Кількість > 0.','warn');return;}
+  if(!inpAuthor.value.trim())      {toast("Введи ім'я.",'warn');return;}
 
-  btnSave.disabled = true;
+  btnSave.disabled=true;
   updateTotal();
   logClear('Відправка в Firebase...');
-  setStatus('Відправка...', 'warn');
+  setStatus('Відправка...','warn');
 
-  const qty = Number(inpQty.value);
-  const pricePerUnit = Number(inpPrice.value || 0);
+  const qty=Number(inpQty.value);
+  const pricePerUnit=Number(inpPrice.value||0);
 
-  const doc = {
-    _auth_key:         authKey,           // ← ключ з localStorage
-    _status:           'new',
-    _created_at:       new Date().toISOString(),
-    flower_name:       inpFlower.value.trim(),
+  const doc={
+    _auth_key:          authKey,
+    _status:            'new',
+    _created_at:        new Date().toISOString(),
+    flower_name:        inpFlower.value.trim(),
     qty,
-    price_per_unit:    pricePerUnit,
-    writeoff_price:    Math.round(qty * pricePerUnit * 100) / 100,
-    writeoff_datetime: new Date(inpDt.value).toISOString(),
-    salon:             inpSalon.value.trim(),
-    created_by:        inpAuthor.value.trim(),
-    note:              inpNote.value.trim(),
-    photo_base64:      currentPhoto.base64,
-    photo_mime:        currentPhoto.mimeType,
-    photo_name:        currentPhoto.name,
+    price_per_unit:     pricePerUnit,
+    writeoff_price:     Math.round(qty*pricePerUnit*100)/100,
+    writeoff_datetime:  new Date(inpDt.value).toISOString(),
+    salon:              inpSalon.value.trim(),
+    created_by:         inpAuthor.value.trim(),
+    note:               inpNote.value.trim(),
+    // MULTI-PHOTO: масив фото
+    photos: photos.map(p=>({
+      base64: p.base64,
+      mime:   p.mimeType,
+      name:   p.name,
+    })),
   };
 
-  try {
-    const ref = await firestoreDb.collection('writeoffs').add(doc);
-    logLine('✅ Збережено! doc_id: ' + ref.id, 'ok');
-    logLine(`${doc.flower_name} · ${doc.qty} шт · ${doc.writeoff_price} грн`, 'info');
-    toast('Списання збережено!', 'ok');
-    setStatus('Готово', '');
-    setTimeout(() => window.location.reload(), 1400);
-  } catch (err) {
-    logLine('ПОМИЛКА: ' + err.message, 'err');
-    toast(err.message, 'err');
-    setStatus('Помилка', 'err');
-    btnSave.disabled = false;
+  try{
+    const ref=await firestoreDb.collection('writeoffs').add(doc);
+    logLine('✅ Збережено! doc_id: '+ref.id,'ok');
+    logLine(`${doc.flower_name} · ${doc.qty} шт · ${doc.writeoff_price} грн · ${photos.length} фото`,'info');
+    toast(`Списання збережено! (${photos.length} фото)`,'ok');
+    setStatus('Готово','');
+    setTimeout(()=>window.location.reload(),1400);
+  }catch(err){
+    logLine('ПОМИЛКА: '+err.message,'err');
+    toast(err.message,'err');
+    setStatus('Помилка','err');
+    btnSave.disabled=false;
   }
 });
 
-/* ══ INIT ══ */
+/* ══ INIT ═ */
 setDefaultDt();
 updateTotal();
+renderPhotos();
 </script>
 </body>
 </html>
