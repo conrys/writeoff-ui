@@ -159,7 +159,7 @@
       <div class="f"><label>Дата і час</label><input id="inp-dt" type="datetime-local"></div>
     </div>
 
-    <div class="fr">
+    <div class="fr" id="price-fields">
       <div class="f"><label>Ціна за шт., грн</label><input id="inp-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></div>
       <div class="f"><label>Сума <span class="hint">(авто)</span></label><input id="inp-total" type="number" readonly tabindex="-1" placeholder="0"></div>
     </div>
@@ -184,6 +184,7 @@
           <label>Звідки</label>
           <select id="inp-from-shop">
             <option value="">— обери —</option>
+            <option>📦 Склад</option>
             <option>Салон №1</option>
             <option>Салон №2</option>
             <option>Салон №3</option>
@@ -193,6 +194,7 @@
           <label>Куди</label>
           <select id="inp-to-shop">
             <option value="">— обери —</option>
+            <option>📦 Склад</option>
             <option>Салон №1</option>
             <option>Салон №2</option>
             <option>Салон №3</option>
@@ -311,6 +313,8 @@ const movementFields = document.getElementById('movement-fields');
 const inpFromShop = document.getElementById('inp-from-shop');
 const inpToShop   = document.getElementById('inp-to-shop');
 
+const priceFields = document.getElementById('price-fields');
+
 /* ══ TAB STATE ══ */
 let currentMode = 'writeoff'; // 'writeoff' | 'movement'
 
@@ -339,6 +343,7 @@ function switchMode(mode) {
         tabMovement.style.background = 'transparent';
         salonField.style.display = '';
         movementFields.style.display = 'none';
+        priceFields.style.display = '';
         btnSave.textContent = 'Зберегти списання';
     } else {
         formTitle.textContent = 'Переміщення';
@@ -348,6 +353,7 @@ function switchMode(mode) {
         tabWriteoff.style.background = 'transparent';
         salonField.style.display = 'none';
         movementFields.style.display = '';
+        priceFields.style.display = 'none';
         btnSave.textContent = 'Зберегти переміщення';
     }
 }
@@ -502,7 +508,7 @@ btnSave.addEventListener('click',async()=>{
   setStatus('Відправка...','warn');
 
   const qty=Number(inpQty.value);
-  const pricePerUnit=Number(inpPrice.value||0);
+  const pricePerUnit = currentMode === 'movement' ? 0 : Number(inpPrice.value||0);
 
   const doc={
     _auth_key:          authKey,
