@@ -115,11 +115,17 @@
   <div class="card">
     <div class="hero">
       <div>
-        <div class="hero-title">Списання</div>
+        <div class="hero-title" id="form-title">Списання</div>
         <div class="hero-sub">Форма флориста</div>
       </div>
       <div class="pill" id="status-pill">Готово</div>
     </div>
+  </div>
+
+  <!-- TABS -->
+  <div style="display:flex;gap:4px;margin-bottom:13px;">
+    <button class="tab-btn active" id="tab-writeoff" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Списання</button>
+    <button class="tab-btn" id="tab-movement" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Переміщення</button>
   </div>
 
   <div class="card fg" id="writeoff-form">
@@ -159,7 +165,7 @@
     </div>
 
     <div class="fr">
-      <div class="f">
+      <div class="f" id="salon-field">
         <label>Салон</label>
         <select id="inp-salon">
           <option value="">— обери —</option>
@@ -169,6 +175,30 @@
         </select>
       </div>
       <div class="f"><label>Хто списує</label><input id="inp-author" type="text" placeholder="Ім'я"></div>
+    </div>
+
+    <!-- Movement fields (hidden by default) -->
+    <div id="movement-fields" style="display:none;">
+      <div class="fr">
+        <div class="f">
+          <label>Звідки</label>
+          <select id="inp-from-shop">
+            <option value="">— обери —</option>
+            <option>Салон №1</option>
+            <option>Салон №2</option>
+            <option>Салон №3</option>
+          </select>
+        </div>
+        <div class="f">
+          <label>Куди</label>
+          <select id="inp-to-shop">
+            <option value="">— обери —</option>
+            <option>Салон №1</option>
+            <option>Салон №2</option>
+            <option>Салон №3</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <div class="f"><label>Коментар</label><textarea id="inp-note" placeholder="Коротка причина або коментар"></textarea></div>
@@ -273,6 +303,16 @@ const inpPhoto = document.getElementById('inp-photo');
 const progWrap = document.getElementById('prog-wrap');
 const progBar  = document.getElementById('prog-bar');
 const photoCnt = document.getElementById('photo-count');
+const formTitle= document.getElementById('form-title');
+const tabWriteoff = document.getElementById('tab-writeoff');
+const tabMovement = document.getElementById('tab-movement');
+const salonField  = document.getElementById('salon-field');
+const movementFields = document.getElementById('movement-fields');
+const inpFromShop = document.getElementById('inp-from-shop');
+const inpToShop   = document.getElementById('inp-to-shop');
+
+/* ══ TAB STATE ══ */
+let currentMode = 'writeoff'; // 'writeoff' | 'movement'
 
 /* ══ MULTI-PHOTO STATE ══ */
 let photos = []; // [{base64, mimeType, name, dataUrl}, ...]
@@ -287,6 +327,32 @@ function setStatus(text,type=''){ heroPill.textContent=text; heroPill.className=
 function updateTotal(){ const q=Number(inpQty.value||0),p=Number(inpPrice.value||0); inpTotal.value=isFinite(q*p)?Math.round(q*p*100)/100:''; }
 inpQty.addEventListener('input',updateTotal);
 inpPrice.addEventListener('input',updateTotal);
+
+/* ══ TAB SWITCHING ══ */
+function switchMode(mode) {
+    currentMode = mode;
+    if (mode === 'writeoff') {
+        formTitle.textContent = 'Списання';
+        tabWriteoff.style.color = 'var(--accent)';
+        tabWriteoff.style.background = 'var(--surface-2)';
+        tabMovement.style.color = 'var(--muted)';
+        tabMovement.style.background = 'transparent';
+        salonField.style.display = '';
+        movementFields.style.display = 'none';
+        btnSave.textContent = 'Зберегти списання';
+    } else {
+        formTitle.textContent = 'Переміщення';
+        tabMovement.style.color = 'var(--accent)';
+        tabMovement.style.background = 'var(--surface-2)';
+        tabWriteoff.style.color = 'var(--muted)';
+        tabWriteoff.style.background = 'transparent';
+        salonField.style.display = 'none';
+        movementFields.style.display = '';
+        btnSave.textContent = 'Зберегти переміщення';
+    }
+}
+tabWriteoff.addEventListener('click', () => switchMode('writeoff'));
+tabMovement.addEventListener('click', () => switchMode('movement'));
 
 /* ══ DATETIME ══ */
 function setDefaultDt(){ const n=new Date(); inpDt.value=new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,16); }
@@ -417,10 +483,18 @@ btnSave.addEventListener('click',async()=>{
   if(!authKey){toast('Сесія втрачена. Оновіть сторінку.','err');showAuth();return;}
 
   if(!photos.length)               {toast('Додай хоча б одне фото.','warn');return;}
-  if(!inpSalon.value)              {toast('Обери салон.','warn');return;}
   if(!inpFlower.value.trim())      {toast('Введи назву квітки.','warn');return;}
   if(Number(inpQty.value||0)<=0)   {toast('Кількість > 0.','warn');return;}
   if(!inpAuthor.value.trim())      {toast("Введи ім'я.",'warn');return;}
+
+  // Mode-specific validation
+  if (currentMode === 'writeoff') {
+      if(!inpSalon.value)          {toast('Обери салон.','warn');return;}
+  } else {
+      if(!inpFromShop.value)       {toast('Обери салон звідки.','warn');return;}
+      if(!inpToShop.value)         {toast('Обери салон куди.','warn');return;}
+      if(inpFromShop.value === inpToShop.value) {toast('Салони мають бути різними.','warn');return;}
+  }
 
   btnSave.disabled=true;
   updateTotal();
@@ -434,12 +508,15 @@ btnSave.addEventListener('click',async()=>{
     _auth_key:          authKey,
     _status:            'new',
     _created_at:        new Date().toISOString(),
+    type:               currentMode, // 'writeoff' or 'movement'
     flower_name:        inpFlower.value.trim(),
     qty,
     price_per_unit:     pricePerUnit,
     writeoff_price:     Math.round(qty*pricePerUnit*100)/100,
     writeoff_datetime:  new Date(inpDt.value).toISOString(),
-    salon:              inpSalon.value.trim(),
+    salon:              currentMode === 'writeoff' ? inpSalon.value.trim() : '',
+    from_shop:          currentMode === 'movement' ? inpFromShop.value.trim() : '',
+    to_shop:            currentMode === 'movement' ? inpToShop.value.trim() : '',
     created_by:         inpAuthor.value.trim(),
     note:               inpNote.value.trim(),
     // MULTI-PHOTO: масив фото
@@ -453,8 +530,12 @@ btnSave.addEventListener('click',async()=>{
   try{
     const ref=await firestoreDb.collection('writeoffs').add(doc);
     logLine('✅ Збережено! doc_id: '+ref.id,'ok');
-    logLine(`${doc.flower_name} · ${doc.qty} шт · ${doc.writeoff_price} грн · ${photos.length} фото`,'info');
-    toast(`Списання збережено! (${photos.length} фото)`,'ok');
+    const modeLabel = currentMode === 'movement' ? 'Переміщення' : 'Списання';
+    const locationInfo = currentMode === 'movement'
+        ? `${doc.from_shop} → ${doc.to_shop}`
+        : doc.salon;
+    logLine(`${doc.flower_name} · ${doc.qty} шт · ${doc.writeoff_price} грн · ${locationInfo} · ${photos.length} фото`,'info');
+    toast(`${modeLabel} збережено! (${photos.length} фото)`,'ok');
     setStatus('Готово','');
     setTimeout(()=>window.location.reload(),1400);
   }catch(err){
