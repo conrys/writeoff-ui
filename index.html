@@ -202,7 +202,20 @@
 
     <!-- ═══ MOVEMENT MODE FIELDS ═══ -->
     <div id="movement-fields" style="display:none;">
-
+      <div style="margin-top:14px;">
+        <label>Фото <span class="hint">(не обов'язково, до 10 шт)</span></label>
+        <div class="photo-area" style="margin-top:6px;">
+          <div class="photo-grid" id="mv-photo-grid">
+            <div class="photo-add" id="mv-btn-add-photo">
+              <span class="ic">📷</span>
+              Додати фото
+            </div>
+          </div>
+          <input id="mv-inp-photo" type="file" accept="image/*" class="hidden">
+          <div class="photo-count" id="mv-photo-count"></div>
+        </div>
+      </div>
+      
       <div class="section-label">Переміщення</div>
       <div class="items-list" id="items-list"></div>
       <button class="add-item-btn" id="btn-add-item" type="button">
@@ -239,19 +252,7 @@
 
       <div class="f" style="margin-top:10px;"><label>Коментар <span class="hint">(не обов'язково)</span></label><textarea id="mv-note" placeholder="Коментар" style="min-height:50px;"></textarea></div>
 
-      <div style="margin-top:14px;">
-        <label>Фото <span class="hint">(не обов'язково, до 10 шт)</span></label>
-        <div class="photo-area" style="margin-top:6px;">
-          <div class="photo-grid" id="mv-photo-grid">
-            <div class="photo-add" id="mv-btn-add-photo">
-              <span class="ic">📷</span>
-              Додати фото
-            </div>
-          </div>
-          <input id="mv-inp-photo" type="file" accept="image/*" class="hidden">
-          <div class="photo-count" id="mv-photo-count"></div>
-        </div>
-      </div>
+      
 
     </div><!-- /movement-fields -->
 
