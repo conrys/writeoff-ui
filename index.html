@@ -50,16 +50,17 @@
     .btns{display:grid;gap:9px;}
 
     /* ─── ITEMS LIST ─── */
-    .items-list{display:grid;gap:10px;}
-    .item-row{display:grid;grid-template-columns:1fr 80px 90px 36px;gap:8px;align-items:end;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--ri);padding:10px 10px 6px;}
+    .items-list{display:grid;gap:8px;}
+    .item-row{display:grid;grid-template-columns:1fr 64px 72px 30px;gap:6px;align-items:end;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--ri);padding:8px 8px 5px;}
     .item-row label{font-size:10px;margin-bottom:2px;}
-    .item-row input,.item-row select{padding:9px 10px;font-size:14px;}
-    .item-remove{background:none;border:1.5px solid rgba(239,68,68,.3);color:var(--danger);border-radius:10px;font-size:18px;cursor:pointer;display:grid;place-items:center;padding:0;transition:all .12s;}
+    .item-row input,.item-row select{padding:8px 9px;font-size:13px;}
+    .item-row select{cursor:pointer;}
+    .item-remove{background:none;border:1.5px solid rgba(239,68,68,.3);color:var(--danger);border-radius:8px;font-size:16px;cursor:pointer;display:grid;place-items:center;padding:0;transition:all .12s;}
     .item-remove:hover{background:rgba(239,68,68,.12);border-color:var(--danger);}
-    .add-item-btn{display:grid;place-items:center;gap:6px;padding:14px;border:1.5px dashed rgba(16,185,129,.28);border-radius:var(--ri);background:rgba(16,185,129,.04);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;transition:all .13s;}
+    .add-item-btn{display:grid;place-items:center;gap:4px;padding:10px;border:1.5px dashed rgba(16,185,129,.28);border-radius:var(--ri);background:rgba(16,185,129,.04);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;transition:all .13s;margin-top:4px;}
     .add-item-btn:hover{border-color:var(--accent);background:var(--accent-glow);}
-    .add-item-btn .ic{font-size:20px;}
-    .items-summary{font-size:12px;color:var(--muted);padding:8px 0 2px;}
+    .add-item-btn .ic{font-size:16px;}
+    .items-summary{font-size:11px;color:var(--muted);padding:6px 0 2px;}
 
     /* ─── MULTI-PHOTO AREA ─── */
     .photo-area{border:1.5px dashed rgba(16,185,129,.28);border-radius:20px;background:linear-gradient(180deg,rgba(16,185,129,.05) 0%,transparent 100%);padding:13px;}
@@ -383,13 +384,24 @@ function removeItem(idx) {
 
 function renderItems() {
     itemsList.innerHTML = '';
+
     movementItems.forEach((item, i) => {
+        const flowerOptions = ['<option value="">— квітка —</option>']
+            .concat(FLOWER_LIST.map(f => {
+                const sel = f === item.flowerName ? 'selected' : '';
+                const muted = f === 'інше...' ? 'style="color:var(--muted);"' : '';
+                return `<option value="${f}" ${sel} ${muted}>${f}</option>`;
+            }))
+            .join('');
+
         const row = document.createElement('div');
         row.className = 'item-row';
         row.innerHTML = `
             <div class="f">
                 <label>Квітка</label>
-                <input type="text" data-idx="${i}" data-field="flowerName" placeholder="Троянда..." value="${item.flowerName}" autocomplete="off">
+                <select data-idx="${i}" data-field="flowerName">
+                    ${flowerOptions}
+                </select>
             </div>
             <div class="f">
                 <label>Кільк.</label>
