@@ -116,8 +116,10 @@
   <div class="auth-card">
     <h2>🔑 Ключ доступу</h2>
     <p>Введіть ключ активації, який видав адміністратор. Пристрій запам'ятає його назавжди.</p>
-    <input id="auth-input" type="password" placeholder="Ключ активації" autocomplete="off" inputmode="text">
-    <button class="btn btn-primary" id="auth-btn" type="button">Активувати</button>
+    <form id="auth-form" onsubmit="return false;">
+      <input id="auth-input" type="password" placeholder="Ключ активації" autocomplete="current-password" inputmode="text">
+      <button class="btn btn-primary" id="auth-btn" type="submit">Активувати</button>
+    </form>
     <div class="err" id="auth-err">Невірний ключ. Зверніться до адміністратора.</div>
   </div>
 </div>
@@ -125,7 +127,7 @@
 <!-- MAIN APP (hidden until auth) -->
 <div class="page" id="main-app" style="display:none;">
 
-  <!-- <div class="card">
+  <div class="card" style="padding:14px 20px;margin-bottom:10px;">
     <div class="hero">
       <div>
         <div class="hero-title" id="form-title">Списання</div>
@@ -133,7 +135,7 @@
       </div>
       <div class="pill" id="status-pill">Готово</div>
     </div>
-  </div> -->
+  </div>
 
   <!-- TABS -->
   <div style="display:flex;gap:4px;margin-bottom:13px;">
@@ -234,7 +236,7 @@
       <div class="f" style="margin-top:10px;"><label>Хто переміщує</label><input id="mv-author" type="text" placeholder="Ім'я"></div>
 
       <div style="margin-top:14px;">
-        <label>Фото <span class="hint">(не обов'язково, до 5 шт)</span></label>
+        <label>Фото <span class="hint">(не обов'язково, до 10 шт)</span></label>
         <div class="photo-area" style="margin-top:6px;">
           <div class="photo-grid" id="mv-photo-grid">
             <div class="photo-add" id="mv-btn-add-photo">
@@ -297,7 +299,9 @@ const FLOWER_LIST = [
 const MAX_IMG_DIM  = 1200;
 const JPEG_QUALITY = 0.78;
 const MAX_B64_KB   = 850;
-const MAX_PHOTOS   = 5;
+const MAX_PHOTOS_WO = 5;   // ліміт для списання
+const MAX_PHOTOS_MV = 10;  // ліміт для переміщення
+const MAX_PHOTOS    = MAX_PHOTOS_WO; // backward compat
 
 /* ── Auth ─ */
 const authOverlay = document.getElementById('auth-overlay');
@@ -528,30 +532,19 @@ document.addEventListener('click',e=>{ if(!inpFlower.contains(e.target)&&!acList
 
 /* ══ RENDER PHOTO GRID ══ */
 function renderPhotos(){
-  // Remove all thumbs but keep the add button
   photoGrid.querySelectorAll('.photo-thumb').forEach(el=>el.remove());
-  
   photos.forEach((p,i)=>{
     const thumb = document.createElement('div');
     thumb.className = 'photo-thumb';
-    thumb.innerHTML = `
-      <img src="${p.dataUrl}" alt="Фото ${i+1}">
-      <button class="remove-btn" data-idx="${i}" type="button">×</button>
-    `;
-    thumb.querySelector('img').addEventListener('click',()=>openLightbox(i));
+    thumb.innerHTML = `<img src="${p.dataUrl}" alt="Фото ${i+1}"><button class="remove-btn" data-idx="${i}" type="button">×</button>`;
+    thumb.querySelector('img').addEventListener('click',()=>openLightbox(i,'wo'));
     thumb.querySelector('.remove-btn').addEventListener('click',(e)=>{
-      e.stopPropagation();
-      photos.splice(i,1);
-      renderPhotos();
+      e.stopPropagation(); photos.splice(i,1); renderPhotos();
     });
     photoGrid.insertBefore(thumb, btnAdd);
   });
-
-  // Update count
-  photoCnt.textContent = photos.length > 0 ? `${photos.length} фото` : '';
-  
-  // Show/hide add button based on limit
-  btnAdd.style.display = photos.length >= MAX_PHOTOS ? 'none' : '';
+  photoCnt.textContent = photos.length > 0 ? `${photos.length} / ${MAX_PHOTOS_WO} фото` : '';
+  btnAdd.style.display = photos.length >= MAX_PHOTOS_WO ? 'none' : '';
 }
 
 /* ══ MOVEMENT PHOTO RENDER ══ */
@@ -561,12 +554,12 @@ function renderMvPhotos(){
     const thumb = document.createElement('div');
     thumb.className = 'photo-thumb';
     thumb.innerHTML = `<img src="${p.dataUrl}" alt="Фото ${i+1}"><button class="remove-btn" data-idx="${i}" type="button">×</button>`;
-    thumb.querySelector('img').addEventListener('click',()=>openLightbox(i));
+    thumb.querySelector('img').addEventListener('click',()=>openLightbox(i,'mv'));
     thumb.querySelector('.remove-btn').addEventListener('click',(e)=>{e.stopPropagation();mvPhotos.splice(i,1);renderMvPhotos();});
     mvPhotoGrid.insertBefore(thumb, mvBtnAdd);
   });
-  mvPhotoCnt.textContent = mvPhotos.length > 0 ? `${mvPhotos.length} фото` : '';
-  mvBtnAdd.style.display = mvPhotos.length >= MAX_PHOTOS ? 'none' : '';
+  mvPhotoCnt.textContent = mvPhotos.length > 0 ? `${mvPhotos.length} / ${MAX_PHOTOS_MV} фото` : '';
+  mvBtnAdd.style.display = mvPhotos.length >= MAX_PHOTOS_MV ? 'none' : '';
 }
 
 /* ══ LIGHTBOX ══ */
@@ -574,9 +567,11 @@ const lightbox = document.getElementById('lightbox');
 const lbImg    = document.getElementById('lb-img');
 const lbCounter= document.getElementById('lb-counter');
 let lbIndex = 0;
+let lbTarget = 'wo'; // 'wo' | 'mv'
 
-function openLightbox(idx){
-  const arr = currentMode==='mv' ? mvPhotos : photos;
+function openLightbox(idx, target='wo'){
+  lbTarget = target;
+  const arr = target==='mv' ? mvPhotos : photos;
   lbIndex = idx;
   lbImg.src = arr[idx].dataUrl;
   lbCounter.textContent = `${idx+1} / ${arr.length}`;
@@ -586,11 +581,11 @@ function openLightbox(idx){
 }
 function closeLightbox(){ lightbox.classList.remove('show'); }
 function lbPrev(){
-  const arr = currentMode==='mv' ? mvPhotos : photos;
+  const arr = lbTarget==='mv' ? mvPhotos : photos;
   lbIndex=(lbIndex-1+arr.length)%arr.length; lbImg.src=arr[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${arr.length}`;
 }
 function lbNext(){
-  const arr = currentMode==='mv' ? mvPhotos : photos;
+  const arr = lbTarget==='mv' ? mvPhotos : photos;
   lbIndex=(lbIndex+1)%arr.length; lbImg.src=arr[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${arr.length}`;
 }
 
@@ -638,7 +633,8 @@ function compress(img){
 async function processFile(file, target='wo'){
   if(!file)return;
   const arr = target==='mv' ? mvPhotos : photos;
-  if(arr.length>=MAX_PHOTOS){toast(`Максимум ${MAX_PHOTOS} фото`,'warn');return;}
+  const limit = target==='mv' ? MAX_PHOTOS_MV : MAX_PHOTOS_WO;
+  if(arr.length>=limit){toast(`Максимум ${limit} фото`,'warn');return;}
   if(target==='wo'){ progWrap.classList.add('show'); setProgress(10); }
   try{
     const {img}=await loadImg(file); if(target==='wo')setProgress(40);
@@ -649,7 +645,7 @@ async function processFile(file, target='wo'){
     arr.push({base64,mimeType:'image/jpeg',name:file.name||'photo.jpg',dataUrl});
     if(target==='mv') renderMvPhotos(); else renderPhotos();
     if(target==='wo'){ setProgress(100); setTimeout(()=>progWrap.classList.remove('show'),600); }
-    toast(`Фото додано (${arr.length}/${MAX_PHOTOS})`,'ok');
+    toast(`Фото додано (${arr.length}/${limit})`,'ok');
   }catch(e){ toast(e.message,'err'); }
   (target==='mv'?mvInpPhoto:inpPhoto).value='';
 }
