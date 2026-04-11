@@ -125,7 +125,7 @@
 <!-- MAIN APP (hidden until auth) -->
 <div class="page" id="main-app" style="display:none;">
 
-  <div class="card">
+  <!-- <div class="card">
     <div class="hero">
       <div>
         <div class="hero-title" id="form-title">Списання</div>
@@ -133,7 +133,7 @@
       </div>
       <div class="pill" id="status-pill">Готово</div>
     </div>
-  </div>
+  </div> -->
 
   <!-- TABS -->
   <div style="display:flex;gap:4px;margin-bottom:13px;">
@@ -233,7 +233,21 @@
 
       <div class="f" style="margin-top:10px;"><label>Хто переміщує</label><input id="mv-author" type="text" placeholder="Ім'я"></div>
 
-      <div class="f" style="margin-top:4px;"><label>Коментар <span class="hint">(не обов'язково)</span></label><textarea id="mv-note" placeholder="Необов'язково" style="min-height:50px;"></textarea></div>
+      <div style="margin-top:14px;">
+        <label>Фото <span class="hint">(не обов'язково, до 5 шт)</span></label>
+        <div class="photo-area" style="margin-top:6px;">
+          <div class="photo-grid" id="mv-photo-grid">
+            <div class="photo-add" id="mv-btn-add-photo">
+              <span class="ic">📷</span>
+              Додати фото
+            </div>
+          </div>
+          <input id="mv-inp-photo" type="file" accept="image/*" class="hidden">
+          <div class="photo-count" id="mv-photo-count"></div>
+        </div>
+      </div>
+
+      <div class="f" style="margin-top:10px;"><label>Коментар <span class="hint">(не обов'язково)</span></label><textarea id="mv-note" placeholder="Коментар" style="min-height:50px;"></textarea></div>
 
     </div><!-- /movement-fields -->
 
@@ -360,7 +374,14 @@ let currentMode = 'writeoff'; // 'writeoff' | 'movement'
 let movementItems = []; // [{flowerName, qty, unit}, ...]
 
 /* ══ MULTI-PHOTO STATE ══ */
-let photos = []; // [{base64, mimeType, name, dataUrl}, ...]
+let photos = []; // writeoff photos [{base64, mimeType, name, dataUrl}, ...]
+let mvPhotos = []; // movement photos
+
+/* ══ MOVEMENT PHOTO DOM ══ */
+const mvPhotoGrid  = document.getElementById('mv-photo-grid');
+const mvBtnAdd     = document.getElementById('mv-btn-add-photo');
+const mvInpPhoto   = document.getElementById('mv-inp-photo');
+const mvPhotoCnt   = document.getElementById('mv-photo-count');
 
 /* ══ TOAST / LOG ══ */
 function toast(msg,type=''){ toastEl.textContent=msg; toastEl.className=`toast show${type?' '+type:''}`; clearTimeout(window._tt); window._tt=setTimeout(()=>{toastEl.className='toast';},3000); }
@@ -533,6 +554,21 @@ function renderPhotos(){
   btnAdd.style.display = photos.length >= MAX_PHOTOS ? 'none' : '';
 }
 
+/* ══ MOVEMENT PHOTO RENDER ══ */
+function renderMvPhotos(){
+  mvPhotoGrid.querySelectorAll('.photo-thumb').forEach(el=>el.remove());
+  mvPhotos.forEach((p,i)=>{
+    const thumb = document.createElement('div');
+    thumb.className = 'photo-thumb';
+    thumb.innerHTML = `<img src="${p.dataUrl}" alt="Фото ${i+1}"><button class="remove-btn" data-idx="${i}" type="button">×</button>`;
+    thumb.querySelector('img').addEventListener('click',()=>openLightbox(i));
+    thumb.querySelector('.remove-btn').addEventListener('click',(e)=>{e.stopPropagation();mvPhotos.splice(i,1);renderMvPhotos();});
+    mvPhotoGrid.insertBefore(thumb, mvBtnAdd);
+  });
+  mvPhotoCnt.textContent = mvPhotos.length > 0 ? `${mvPhotos.length} фото` : '';
+  mvBtnAdd.style.display = mvPhotos.length >= MAX_PHOTOS ? 'none' : '';
+}
+
 /* ══ LIGHTBOX ══ */
 const lightbox = document.getElementById('lightbox');
 const lbImg    = document.getElementById('lb-img');
@@ -540,16 +576,23 @@ const lbCounter= document.getElementById('lb-counter');
 let lbIndex = 0;
 
 function openLightbox(idx){
+  const arr = currentMode==='mv' ? mvPhotos : photos;
   lbIndex = idx;
-  lbImg.src = photos[idx].dataUrl;
-  lbCounter.textContent = `${idx+1} / ${photos.length}`;
+  lbImg.src = arr[idx].dataUrl;
+  lbCounter.textContent = `${idx+1} / ${arr.length}`;
   lightbox.classList.add('show');
-  document.getElementById('lb-prev').style.display = photos.length > 1 ? '' : 'none';
-  document.getElementById('lb-next').style.display = photos.length > 1 ? '' : 'none';
+  document.getElementById('lb-prev').style.display = arr.length > 1 ? '' : 'none';
+  document.getElementById('lb-next').style.display = arr.length > 1 ? '' : 'none';
 }
 function closeLightbox(){ lightbox.classList.remove('show'); }
-function lbPrev(){ lbIndex=(lbIndex-1+photos.length)%photos.length; lbImg.src=photos[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${photos.length}`; }
-function lbNext(){ lbIndex=(lbIndex+1)%photos.length; lbImg.src=photos[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${photos.length}`; }
+function lbPrev(){
+  const arr = currentMode==='mv' ? mvPhotos : photos;
+  lbIndex=(lbIndex-1+arr.length)%arr.length; lbImg.src=arr[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${arr.length}`;
+}
+function lbNext(){
+  const arr = currentMode==='mv' ? mvPhotos : photos;
+  lbIndex=(lbIndex+1)%arr.length; lbImg.src=arr[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${arr.length}`;
+}
 
 document.getElementById('lb-close').addEventListener('click',closeLightbox);
 document.getElementById('lb-prev').addEventListener('click',lbPrev);
@@ -564,7 +607,10 @@ document.addEventListener('keydown',e=>{
 
 /* ══ ADD PHOTO ══ */
 btnAdd.addEventListener('click',()=>inpPhoto.click());
-inpPhoto.addEventListener('change',e=>{ if(e.target.files?.[0]) processFile(e.target.files[0]); });
+inpPhoto.addEventListener('change',e=>{ if(e.target.files?.[0]) processFile(e.target.files[0], 'wo'); });
+
+mvBtnAdd.addEventListener('click',()=>mvInpPhoto.click());
+mvInpPhoto.addEventListener('change',e=>{ if(e.target.files?.[0]) processFile(e.target.files[0], 'mv'); });
 
 function loadImg(file){
   return new Promise((resolve,reject)=>{
@@ -589,23 +635,23 @@ function compress(img){
   return c.toDataURL('image/jpeg',JPEG_QUALITY);
 }
 
-async function processFile(file){
+async function processFile(file, target='wo'){
   if(!file)return;
-  if(photos.length>=MAX_PHOTOS){toast(`Максимум ${MAX_PHOTOS} фото`,'warn');return;}
-  progWrap.classList.add('show'); setProgress(10);
+  const arr = target==='mv' ? mvPhotos : photos;
+  if(arr.length>=MAX_PHOTOS){toast(`Максимум ${MAX_PHOTOS} фото`,'warn');return;}
+  if(target==='wo'){ progWrap.classList.add('show'); setProgress(10); }
   try{
-    const {img}=await loadImg(file); setProgress(40);
-    const dataUrl=compress(img); setProgress(70);
+    const {img}=await loadImg(file); if(target==='wo')setProgress(40);
+    const dataUrl=compress(img); if(target==='wo')setProgress(70);
     const base64=dataUrl.split(',')[1]||'';
     const sizeKB=Math.ceil((base64.length*3)/4/1024);
     if(sizeKB>MAX_B64_KB)throw new Error(`Фото завелике (${sizeKB}KB > ${MAX_B64_KB}KB)`);
-    photos.push({base64,mimeType:'image/jpeg',name:file.name||'photo.jpg',dataUrl});
-    renderPhotos();
-    setProgress(100);
-    setTimeout(()=>progWrap.classList.remove('show'),600);
-    toast(`Фото додано (${photos.length}/${MAX_PHOTOS})`,'ok');
+    arr.push({base64,mimeType:'image/jpeg',name:file.name||'photo.jpg',dataUrl});
+    if(target==='mv') renderMvPhotos(); else renderPhotos();
+    if(target==='wo'){ setProgress(100); setTimeout(()=>progWrap.classList.remove('show'),600); }
+    toast(`Фото додано (${arr.length}/${MAX_PHOTOS})`,'ok');
   }catch(e){ toast(e.message,'err'); }
-  inpPhoto.value='';
+  (target==='mv'?mvInpPhoto:inpPhoto).value='';
 }
 
 function setProgress(pct){ progBar.style.width=pct+'%'; }
@@ -700,7 +746,7 @@ btnSave.addEventListener('click',async()=>{
         to_shop:            inpToShop.value.trim(),
         created_by:         mvAuthor.value.trim(),
         note:               mvNote.value.trim(),
-        photos: photos.map(p=>({
+        photos: mvPhotos.map(p=>({
           base64: p.base64,
           mime:   p.mimeType,
           name:   p.name,
@@ -716,7 +762,7 @@ btnSave.addEventListener('click',async()=>{
         const ref=await firestoreDb.collection('writeoffs').add(doc);
         logLine('✅ Збережено! doc_id: '+ref.id,'ok');
         const itemsDesc = filledItems.map(it=>`${it.flowerName.trim()} ${it.qty}${it.unit==='уп'?' уп':' шт'}`).join(', ');
-        logLine(`${itemsDesc} · ${doc.from_shop} → ${doc.to_shop} · ${photos.length} фото`,'info');
+        logLine(`${itemsDesc} · ${doc.from_shop} → ${doc.to_shop} · ${mvPhotos.length} фото`,'info');
         toast(`Переміщення збережено! (${filledItems.length} поз.)`,'ok');
         setStatus('Готово','');
         setTimeout(()=>window.location.reload(),1400);
@@ -733,6 +779,7 @@ btnSave.addEventListener('click',async()=>{
 setDefaultDt();
 updateTotal();
 renderPhotos();
+renderMvPhotos();
 </script>
 </body>
 </html>
