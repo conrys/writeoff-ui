@@ -202,7 +202,8 @@
 
     <!-- ═══ MOVEMENT MODE FIELDS ═══ -->
     <div id="movement-fields" style="display:none;">
-      <div style="margin-top:14px;">
+
+      <div>
         <label>Фото <span class="hint">(не обов'язково, до 10 шт)</span></label>
         <div class="photo-area" style="margin-top:6px;">
           <div class="photo-grid" id="mv-photo-grid">
@@ -215,7 +216,7 @@
           <div class="photo-count" id="mv-photo-count"></div>
         </div>
       </div>
-      
+
       <div class="section-label">Переміщення</div>
       <div class="items-list" id="items-list"></div>
       <button class="add-item-btn" id="btn-add-item" type="button">
@@ -251,8 +252,6 @@
       <div class="f" style="margin-top:10px;"><label>Хто переміщує</label><input id="mv-author" type="text" placeholder="Ім'я"></div>
 
       <div class="f" style="margin-top:10px;"><label>Коментар <span class="hint">(не обов'язково)</span></label><textarea id="mv-note" placeholder="Коментар" style="min-height:50px;"></textarea></div>
-
-      
 
     </div><!-- /movement-fields -->
 
@@ -441,93 +440,113 @@ function renderItems() {
         itemsList.appendChild(row);
     });
 
-    // ── Autocomplete per item
-    let acActiveIdx = -1;
-
-    function renderAcList(idx, q) {
-        const list = itemsList.querySelector(`[data-ac-list="${idx}"]`);
-        const inp = itemsList.querySelector(`input[data-idx="${idx}"][data-field="flowerName"]`);
-        if (!list || !inp) return;
-        const query = q.trim().toLowerCase();
-        const matches = query ? FLOWER_LIST.filter(f => f.toLowerCase().includes(query)) : FLOWER_LIST;
-        if (!matches.length) { list.classList.remove('open'); return; }
-        acActiveIdx = -1;
-        list.innerHTML = matches.map(f => `<div class="ac-item" data-ac-idx="${idx}" data-val="${f}">${f}</div>`).join('');
-        list.classList.add('open');
-    }
-
-    itemsList.querySelectorAll('input[data-field="flowerName"]').forEach(inp => {
-        inp.addEventListener('focus', () => renderAcList(Number(inp.dataset.idx), inp.value));
-        inp.addEventListener('input', e => {
-            const idx = Number(e.target.dataset.idx);
-            movementItems[idx].flowerName = e.target.value;
-            updateItemsSummary();
-            renderAcList(idx, e.target.value);
-        });
-        inp.addEventListener('keydown', e => {
-            const idx = Number(e.target.dataset.idx);
-            const list = itemsList.querySelector(`[data-ac-list="${idx}"]`);
-            const items = list ? list.querySelectorAll('.ac-item') : [];
-            if (!items.length) return;
-            if (e.key === 'ArrowDown') {
-                acActiveIdx = Math.min(acActiveIdx + 1, items.length - 1);
-                items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
-                e.preventDefault();
-            } else if (e.key === 'ArrowUp') {
-                acActiveIdx = Math.max(acActiveIdx - 1, 0);
-                items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
-                e.preventDefault();
-            } else if (e.key === 'Enter' && acActiveIdx >= 0) {
-                inp.value = items[acActiveIdx].dataset.val;
-                movementItems[idx].flowerName = items[acActiveIdx].dataset.val;
-                list.classList.remove('open');
-                updateItemsSummary();
-                e.preventDefault();
-            } else if (e.key === 'Escape') {
-                list.classList.remove('open');
-            }
-        });
-    });
-
-    // Click on ac-item
-    itemsList.querySelectorAll('.ac-item').forEach(el => {
-        el.addEventListener('click', () => {
-            const idx = Number(el.dataset.acIdx);
-            const inp = itemsList.querySelector(`input[data-idx="${idx}"][data-field="flowerName"]`);
-            if (inp) {
-                inp.value = el.dataset.val;
-                movementItems[idx].flowerName = el.dataset.val;
-                updateItemsSummary();
-            }
-            el.closest('.ac-list').classList.remove('open');
-        });
-    });
-
-    // Close lists on outside click
-    document.addEventListener('click', e => {
-        if (!e.target.closest('.item-row .ac-wrap')) {
-            itemsList.querySelectorAll('.ac-list.open').forEach(l => l.classList.remove('open'));
+    // Show dropdowns for all items that have a value
+    movementItems.forEach((item, i) => {
+        if (item.flowerName) {
+            const inp = itemsList.querySelector(`input[data-idx="${i}"][data-field="flowerName"]`);
+            if (inp) renderAcList(i, inp.value);
         }
     });
-
-    // Other fields
-    itemsList.querySelectorAll('input[data-field="qty"], select[data-field="unit"]').forEach(inp => {
-        inp.addEventListener('input', e => {
-            const idx = Number(e.target.dataset.idx);
-            const field = e.target.dataset.field;
-            movementItems[idx][field] = e.target.value;
-            updateItemsSummary();
-        });
-    });
-
-    itemsList.querySelectorAll('.item-remove').forEach(btn => {
-        btn.addEventListener('click', e => {
-            removeItem(Number(e.target.dataset.idx));
-        });
-    });
-
-    updateItemsSummary();
 }
+
+// ── Autocomplete helpers ──
+let acActiveIdx = -1;
+
+function renderAcList(idx, q) {
+    const list = itemsList.querySelector(`[data-ac-list="${idx}"]`);
+    if (!list) return;
+    const query = (q || '').trim().toLowerCase();
+    const matches = query ? FLOWER_LIST.filter(f => f.toLowerCase().includes(query)) : FLOWER_LIST;
+    if (!matches.length) { list.classList.remove('open'); return; }
+    acActiveIdx = -1;
+    list.innerHTML = matches.map(f => `<div class="ac-item" data-ac-idx="${idx}" data-val="${f}">${f}</div>`).join('');
+    list.classList.add('open');
+}
+
+function selectFlower(idx, val) {
+    const inp = itemsList.querySelector(`input[data-idx="${idx}"][data-field="flowerName"]`);
+    if (inp) inp.value = val;
+    movementItems[idx].flowerName = val;
+    updateItemsSummary();
+    const list = itemsList.querySelector(`[data-ac-list="${idx}"]`);
+    if (list) list.classList.remove('open');
+}
+
+function closeAllAcLists() {
+    itemsList.querySelectorAll('.ac-list.open').forEach(l => l.classList.remove('open'));
+}
+
+// ── Event delegation on itemsList ──
+itemsList.addEventListener('input', e => {
+    const t = e.target;
+    if (!t.dataset || !('idx' in t.dataset)) return;
+    const idx = Number(t.dataset.idx);
+    const field = t.dataset.field;
+    if (field === 'flowerName') {
+        movementItems[idx].flowerName = t.value;
+        updateItemsSummary();
+        renderAcList(idx, t.value);
+    } else {
+        movementItems[idx][field] = t.value;
+        updateItemsSummary();
+    }
+});
+
+itemsList.addEventListener('focus', e => {
+    const t = e.target;
+    if (t.dataset && t.dataset.field === 'flowerName') {
+        renderAcList(Number(t.dataset.idx), t.value);
+    }
+}, true);
+
+itemsList.addEventListener('keydown', e => {
+    const t = e.target;
+    if (!(t.dataset && t.dataset.field === 'flowerName')) return;
+    const idx = Number(t.dataset.idx);
+    const list = itemsList.querySelector(`[data-ac-list="${idx}"]`);
+    const acItems = list ? list.querySelectorAll('.ac-item') : [];
+    if (!acItems.length) return;
+
+    if (e.key === 'ArrowDown') {
+        acActiveIdx = Math.min(acActiveIdx + 1, acItems.length - 1);
+        acItems.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
+        e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+        acActiveIdx = Math.max(acActiveIdx - 1, 0);
+        acItems.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
+        e.preventDefault();
+    } else if (e.key === 'Enter' && acActiveIdx >= 0) {
+        selectFlower(idx, acItems[acActiveIdx].dataset.val);
+        e.preventDefault();
+    } else if (e.key === 'Escape') {
+        list.classList.remove('open');
+    }
+});
+
+itemsList.addEventListener('click', e => {
+    // Click on autocomplete item
+    const acItem = e.target.closest('.ac-item');
+    if (acItem) {
+        e.preventDefault();
+        e.stopPropagation();
+        selectFlower(Number(acItem.dataset.acIdx), acItem.dataset.val);
+        return;
+    }
+    // Click on remove button
+    const removeBtn = e.target.closest('.item-remove');
+    if (removeBtn) {
+        removeItem(Number(removeBtn.dataset.idx));
+    }
+});
+
+// Close all lists on outside click
+document.addEventListener('click', e => {
+    if (!e.target.closest('.item-row .ac-wrap')) {
+        closeAllAcLists();
+    }
+});
+
+btnAddItem.addEventListener('click', addItem);
 
 function updateItemsSummary() {
     const filled = movementItems.filter(it => it.flowerName.trim());
@@ -543,8 +562,6 @@ function updateItemsSummary() {
     });
     itemsSummary.textContent = parts.join(' · ');
 }
-
-btnAddItem.addEventListener('click', addItem);
 
 /* ══ TOTAL ══ */
 function updateTotal(){ const q=Number(inpQty.value||0),p=Number(inpPrice.value||0); inpTotal.value=isFinite(q*p)?Math.round(q*p*100)/100:''; }
