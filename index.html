@@ -143,8 +143,62 @@
 
   <div class="card fg" id="writeoff-form">
 
-    <!-- ITEMS LIST (for movement mode) -->
-    <div id="movement-items-section" style="display:none;">
+    <!-- ═══ WRITEOFF MODE FIELDS ═══ -->
+    <div id="writeoff-fields">
+
+      <div>
+        <label>Фото <span class="hint">(до 5 шт)</span></label>
+        <div class="photo-area" style="margin-top:6px;">
+          <div class="photo-grid" id="photo-grid">
+            <div class="photo-add" id="btn-add-photo">
+              <span class="ic">📷</span>
+              Додати фото
+            </div>
+          </div>
+          <input id="inp-photo" type="file" accept="image/*" class="hidden">
+          <div class="photo-count" id="photo-count"></div>
+          <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
+        </div>
+      </div>
+
+      <div class="f">
+        <label>Назва квітки</label>
+        <div class="ac-wrap">
+          <input id="inp-flower" type="text" placeholder="Почни вводити або обери..." autocomplete="off">
+          <div class="ac-list" id="ac-list"></div>
+        </div>
+      </div>
+
+      <div class="fr">
+        <div class="f"><label>Кількість</label><input id="inp-qty" type="number" min="1" step="1" inputmode="numeric" placeholder="1"></div>
+        <div class="f"><label>Дата і час</label><input id="inp-dt" type="datetime-local"></div>
+      </div>
+
+      <div class="fr" id="price-fields">
+        <div class="f"><label>Ціна за шт., грн</label><input id="inp-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></div>
+        <div class="f"><label>Сума <span class="hint">(авто)</span></label><input id="inp-total" type="number" readonly tabindex="-1" placeholder="0"></div>
+      </div>
+
+      <div class="fr">
+        <div class="f" id="salon-field">
+          <label>Салон</label>
+          <select id="inp-salon">
+            <option value="">— обери —</option>
+            <option>Салон №1</option>
+            <option>Салон №2</option>
+            <option>Салон №3</option>
+          </select>
+        </div>
+        <div class="f"><label>Хто списує</label><input id="wo-author" type="text" placeholder="Ім'я"></div>
+      </div>
+
+      <div class="f"><label>Коментар</label><textarea id="wo-note" placeholder="Коротка причина або коментар"></textarea></div>
+
+    </div><!-- /writeoff-fields -->
+
+    <!-- ═══ MOVEMENT MODE FIELDS ═══ -->
+    <div id="movement-fields" style="display:none;">
+
       <div class="section-label">Переміщення</div>
       <div class="items-list" id="items-list"></div>
       <button class="add-item-btn" id="btn-add-item" type="button">
@@ -152,65 +206,8 @@
         Додати квітку
       </button>
       <div class="items-summary" id="items-summary"></div>
-    </div>
 
-    <!-- Single item fields (for writeoff mode) -->
-    <div id="writeoff-single-item">
-
-    <div>
-      <label>Фото <span class="hint" id="photo-hint">(до 5 шт)</span></label>
-      <div class="photo-area" style="margin-top:6px;">
-        <div class="photo-grid" id="photo-grid">
-          <div class="photo-add" id="btn-add-photo">
-            <span class="ic">📷</span>
-            Додати фото
-          </div>
-        </div>
-        <!-- Без capture — на телефоні дає вибір: камера чи галерея -->
-        <input id="inp-photo" type="file" accept="image/*" class="hidden">
-        <div class="photo-count" id="photo-count"></div>
-        <div class="prog-wrap" id="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
-      </div>
-    </div>
-
-    <div class="f">
-      <label>Назва квітки</label>
-      <div class="ac-wrap">
-        <input id="inp-flower" type="text" placeholder="Почни вводити або обери..." autocomplete="off">
-        <div class="ac-list" id="ac-list"></div>
-      </div>
-    </div>
-
-    <div class="fr">
-      <div class="f"><label>Кількість</label><input id="inp-qty" type="number" min="1" step="1" inputmode="numeric" placeholder="1"></div>
-      <div class="f"><label>Дата і час</label><input id="inp-dt" type="datetime-local"></div>
-    </div>
-
-    <div class="fr" id="price-fields">
-      <div class="f"><label>Ціна за шт., грн</label><input id="inp-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></div>
-      <div class="f"><label>Сума <span class="hint">(авто)</span></label><input id="inp-total" type="number" readonly tabindex="-1" placeholder="0"></div>
-    </div>
-
-    <div class="fr">
-      <div class="f" id="salon-field">
-        <label>Салон</label>
-        <select id="inp-salon">
-          <option value="">— обери —</option>
-          <option>Салон №1</option>
-          <option>Салон №2</option>
-          <option>Салон №3</option>
-        </select>
-      </div>
-      <div class="f" id="writeoff-author-field"><label>Хто списує</label><input id="inp-author" type="text" placeholder="Ім'я"></div>
-    </div>
-
-    <div class="f"><label>Коментар</label><textarea id="inp-note" placeholder="Коротка причина або коментар"></textarea></div>
-
-    </div><!-- /writeoff-single-item -->
-
-    <!-- Movement fields (visible for movement mode) -->
-    <div id="movement-fields" style="display:none;">
-      <div class="section-label">Маршрут</div>
+      <div class="section-label" style="margin-top:14px;">Маршрут</div>
       <div class="fr">
         <div class="f">
           <label>Звідки</label>
@@ -233,12 +230,14 @@
           </select>
         </div>
       </div>
-      <div class="f" style="margin-top:10px;"><label>Хто переміщує</label><input id="inp-author" type="text" placeholder="Ім'я"></div>
-    </div>
 
-    <div class="f" id="writeoff-comment"><label>Коментар</label><textarea id="inp-note" placeholder="Коротка причина або коментар"></textarea></div>
+      <div class="f" style="margin-top:10px;"><label>Хто переміщує</label><input id="mv-author" type="text" placeholder="Ім'я"></div>
 
-    <div class="btns">
+      <div class="f" style="margin-top:4px;"><label>Коментар <span class="hint">(не обов'язково)</span></label><textarea id="mv-note" placeholder="Необов'язково" style="min-height:50px;"></textarea></div>
+
+    </div><!-- /movement-fields -->
+
+    <div class="btns" style="margin-top:6px;">
       <button class="btn btn-primary" id="btn-save">Зберегти списання</button>
     </div>
 
@@ -330,8 +329,10 @@ const inpDt    = document.getElementById('inp-dt');
 const inpPrice = document.getElementById('inp-price');
 const inpTotal = document.getElementById('inp-total');
 const inpSalon = document.getElementById('inp-salon');
-const inpAuthor= document.getElementById('inp-author');
-const inpNote  = document.getElementById('inp-note');
+const woAuthor = document.getElementById('wo-author');
+const woNote   = document.getElementById('wo-note');
+const mvAuthor = document.getElementById('mv-author');
+const mvNote   = document.getElementById('mv-note');
 const photoGrid= document.getElementById('photo-grid');
 const btnAdd   = document.getElementById('btn-add-photo');
 const inpPhoto = document.getElementById('inp-photo');
@@ -342,17 +343,13 @@ const formTitle= document.getElementById('form-title');
 const tabWriteoff = document.getElementById('tab-writeoff');
 const tabMovement = document.getElementById('tab-movement');
 const salonField  = document.getElementById('salon-field');
-const writeoffAuthorField = document.getElementById('writeoff-author-field');
-const writeoffComment = document.getElementById('writeoff-comment');
-const writeoffSingleItem = document.getElementById('writeoff-single-item');
-const movementFields = document.getElementById('movement-fields');
-const movementItemsSection = document.getElementById('movement-items-section');
+const writeoffFields  = document.getElementById('writeoff-fields');
+const movementFields  = document.getElementById('movement-fields');
 const itemsList = document.getElementById('items-list');
 const btnAddItem = document.getElementById('btn-add-item');
 const itemsSummary = document.getElementById('items-summary');
 const inpFromShop = document.getElementById('inp-from-shop');
 const inpToShop   = document.getElementById('inp-to-shop');
-const photoHint = document.getElementById('photo-hint');
 
 const priceFields = document.getElementById('price-fields');
 
@@ -469,30 +466,20 @@ function switchMode(mode) {
         tabWriteoff.style.background = 'var(--surface-2)';
         tabMovement.style.color = 'var(--muted)';
         tabMovement.style.background = 'transparent';
-        salonField.style.display = '';
-        writeoffAuthorField.style.display = '';
-        writeoffComment.style.display = '';
-        writeoffSingleItem.style.display = '';
+        writeoffFields.style.display = '';
         movementFields.style.display = 'none';
-        movementItemsSection.style.display = 'none';
         priceFields.style.display = '';
         btnSave.textContent = 'Зберегти списання';
-        photoHint.textContent = '(до 5 шт)';
     } else {
         formTitle.textContent = 'Переміщення';
         tabMovement.style.color = 'var(--accent)';
         tabMovement.style.background = 'var(--surface-2)';
         tabWriteoff.style.color = 'var(--muted)';
         tabWriteoff.style.background = 'transparent';
-        salonField.style.display = 'none';
-        writeoffAuthorField.style.display = 'none';
-        writeoffComment.style.display = 'none';
-        writeoffSingleItem.style.display = 'none';
+        writeoffFields.style.display = 'none';
         movementFields.style.display = '';
-        movementItemsSection.style.display = '';
         priceFields.style.display = 'none';
         btnSave.textContent = 'Зберегти переміщення';
-        photoHint.textContent = '(до 5 шт)';
         // Add first item if list is empty
         if (movementItems.length === 0) addItem();
     }
@@ -633,21 +620,20 @@ btnSave.addEventListener('click',async()=>{
       if(!photos.length)               {toast('Додай хоча б одне фото.','warn');return;}
       if(!inpFlower.value.trim())      {toast('Введи назву квітки.','warn');return;}
       if(Number(inpQty.value||0)<=0)   {toast('Кількість > 0.','warn');return;}
-      if(!inpAuthor.value.trim())      {toast("Введи ім'я.",'warn');return;}
+      if(!woAuthor.value.trim())       {toast("Введи ім'я.",'warn');return;}
       if(!inpSalon.value)              {toast('Обери салон.','warn');return;}
   } else {
       // Movement mode
       const filledItems = movementItems.filter(it => it.flowerName.trim());
       if(!filledItems.length)          {toast('Додай хоча б одну квітку.','warn');return;}
-      // Check all items have qty
       for(const it of filledItems){
           if(!it.qty || Number(it.qty)<=0){toast(`Вкажи кількість для "${it.flowerName}".`,'warn');return;}
       }
       if(!inpFromShop.value)           {toast('Обери салон звідки.','warn');return;}
       if(!inpToShop.value)             {toast('Обери салон куди.','warn');return;}
       if(inpFromShop.value === inpToShop.value) {toast('Салони мають бути різними.','warn');return;}
-      if(!inpAuthor.value.trim())      {toast("Введи ім'я.",'warn');return;}
-      // Photos are optional for movements
+      if(!mvAuthor.value.trim())       {toast("Введи ім'я.",'warn');return;}
+      // Photos optional for movements
   }
 
   btnSave.disabled=true;
@@ -672,14 +658,14 @@ btnSave.addEventListener('click',async()=>{
         salon:              inpSalon.value.trim(),
         from_shop:          '',
         to_shop:            '',
-        created_by:         inpAuthor.value.trim(),
-        note:               inpNote.value.trim(),
+        created_by:         woAuthor.value.trim(),
+        note:               woNote.value.trim(),
         photos: photos.map(p=>({
           base64: p.base64,
           mime:   p.mimeType,
           name:   p.name,
         })),
-        items: [], // legacy single-item structure
+        items: [],
       };
 
       try{
@@ -712,8 +698,8 @@ btnSave.addEventListener('click',async()=>{
         salon:              '',
         from_shop:          inpFromShop.value.trim(),
         to_shop:            inpToShop.value.trim(),
-        created_by:         inpAuthor.value.trim(),
-        note:               inpNote.value.trim(),
+        created_by:         mvAuthor.value.trim(),
+        note:               mvNote.value.trim(),
         photos: photos.map(p=>({
           base64: p.base64,
           mime:   p.mimeType,
