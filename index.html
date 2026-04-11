@@ -51,7 +51,9 @@
 
     /* ─── ITEMS LIST ─── */
     .items-list{display:grid;gap:8px;}
-    .item-row{display:grid;grid-template-columns:1fr 64px 72px 30px;gap:6px;align-items:end;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--ri);padding:8px 8px 5px;}
+    .item-row{display:grid;grid-template-columns:1fr 64px 72px 30px;gap:6px;align-items:end;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--ri);padding:8px 8px 5px;position:relative;z-index:1;}
+    .item-row .ac-wrap .ac-list{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:100;max-height:160px;}
+    .item-row .ac-item{font-size:13px;padding:9px 14px;}
     .item-row label{font-size:10px;margin-bottom:2px;}
     .item-row input,.item-row select{padding:8px 9px;font-size:13px;}
     .item-row select{cursor:pointer;}
@@ -201,20 +203,6 @@
     <!-- ═══ MOVEMENT MODE FIELDS ═══ -->
     <div id="movement-fields" style="display:none;">
 
-      <div style="margin-top:14px;">
-        <label>Фото <span class="hint">(До 10 шт)</span></label>
-        <div class="photo-area" style="margin-top:6px;">
-          <div class="photo-grid" id="mv-photo-grid">
-            <div class="photo-add" id="mv-btn-add-photo">
-              <span class="ic">📷</span>
-              Додати фото
-            </div>
-          </div>
-          <input id="mv-inp-photo" type="file" accept="image/*" class="hidden">
-          <div class="photo-count" id="mv-photo-count"></div>
-        </div>
-      </div>
-
       <div class="section-label">Переміщення</div>
       <div class="items-list" id="items-list"></div>
       <button class="add-item-btn" id="btn-add-item" type="button">
@@ -249,9 +237,21 @@
 
       <div class="f" style="margin-top:10px;"><label>Хто переміщує</label><input id="mv-author" type="text" placeholder="Ім'я"></div>
 
-      
-
       <div class="f" style="margin-top:10px;"><label>Коментар <span class="hint">(не обов'язково)</span></label><textarea id="mv-note" placeholder="Коментар" style="min-height:50px;"></textarea></div>
+
+      <div style="margin-top:14px;">
+        <label>Фото <span class="hint">(не обов'язково, до 10 шт)</span></label>
+        <div class="photo-area" style="margin-top:6px;">
+          <div class="photo-grid" id="mv-photo-grid">
+            <div class="photo-add" id="mv-btn-add-photo">
+              <span class="ic">📷</span>
+              Додати фото
+            </div>
+          </div>
+          <input id="mv-inp-photo" type="file" accept="image/*" class="hidden">
+          <div class="photo-count" id="mv-photo-count"></div>
+        </div>
+      </div>
 
     </div><!-- /movement-fields -->
 
@@ -406,26 +406,23 @@ function removeItem(idx) {
     renderItems();
 }
 
+function escapeAttr(v) {
+    return String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function renderItems() {
     itemsList.innerHTML = '';
 
     movementItems.forEach((item, i) => {
-        const flowerOptions = ['<option value="">— квітка —</option>']
-            .concat(FLOWER_LIST.map(f => {
-                const sel = f === item.flowerName ? 'selected' : '';
-                const muted = f === 'інше...' ? 'style="color:var(--muted);"' : '';
-                return `<option value="${f}" ${sel} ${muted}>${f}</option>`;
-            }))
-            .join('');
-
         const row = document.createElement('div');
         row.className = 'item-row';
         row.innerHTML = `
             <div class="f">
                 <label>Квітка</label>
-                <select data-idx="${i}" data-field="flowerName">
-                    ${flowerOptions}
-                </select>
+                <div class="ac-wrap">
+                    <input type="text" data-idx="${i}" data-field="flowerName" placeholder="Почни вводити..." value="${escapeAttr(item.flowerName)}" autocomplete="off">
+                    <div class="ac-list" data-ac-list="${i}"></div>
+                </div>
             </div>
             <div class="f">
                 <label>Кільк.</label>
@@ -443,8 +440,77 @@ function renderItems() {
         itemsList.appendChild(row);
     });
 
-    // Attach events
-    itemsList.querySelectorAll('input, select').forEach(inp => {
+    // ── Autocomplete per item
+    let acActiveIdx = -1;
+
+    function renderAcList(idx, q) {
+        const list = itemsList.querySelector(`[data-ac-list="${idx}"]`);
+        const inp = itemsList.querySelector(`input[data-idx="${idx}"][data-field="flowerName"]`);
+        if (!list || !inp) return;
+        const query = q.trim().toLowerCase();
+        const matches = query ? FLOWER_LIST.filter(f => f.toLowerCase().includes(query)) : FLOWER_LIST;
+        if (!matches.length) { list.classList.remove('open'); return; }
+        acActiveIdx = -1;
+        list.innerHTML = matches.map(f => `<div class="ac-item" data-ac-idx="${idx}" data-val="${f}">${f}</div>`).join('');
+        list.classList.add('open');
+    }
+
+    itemsList.querySelectorAll('input[data-field="flowerName"]').forEach(inp => {
+        inp.addEventListener('focus', () => renderAcList(Number(inp.dataset.idx), inp.value));
+        inp.addEventListener('input', e => {
+            const idx = Number(e.target.dataset.idx);
+            movementItems[idx].flowerName = e.target.value;
+            updateItemsSummary();
+            renderAcList(idx, e.target.value);
+        });
+        inp.addEventListener('keydown', e => {
+            const idx = Number(e.target.dataset.idx);
+            const list = itemsList.querySelector(`[data-ac-list="${idx}"]`);
+            const items = list ? list.querySelectorAll('.ac-item') : [];
+            if (!items.length) return;
+            if (e.key === 'ArrowDown') {
+                acActiveIdx = Math.min(acActiveIdx + 1, items.length - 1);
+                items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
+                e.preventDefault();
+            } else if (e.key === 'ArrowUp') {
+                acActiveIdx = Math.max(acActiveIdx - 1, 0);
+                items.forEach((el, i) => el.classList.toggle('active', i === acActiveIdx));
+                e.preventDefault();
+            } else if (e.key === 'Enter' && acActiveIdx >= 0) {
+                inp.value = items[acActiveIdx].dataset.val;
+                movementItems[idx].flowerName = items[acActiveIdx].dataset.val;
+                list.classList.remove('open');
+                updateItemsSummary();
+                e.preventDefault();
+            } else if (e.key === 'Escape') {
+                list.classList.remove('open');
+            }
+        });
+    });
+
+    // Click on ac-item
+    itemsList.querySelectorAll('.ac-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const idx = Number(el.dataset.acIdx);
+            const inp = itemsList.querySelector(`input[data-idx="${idx}"][data-field="flowerName"]`);
+            if (inp) {
+                inp.value = el.dataset.val;
+                movementItems[idx].flowerName = el.dataset.val;
+                updateItemsSummary();
+            }
+            el.closest('.ac-list').classList.remove('open');
+        });
+    });
+
+    // Close lists on outside click
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.item-row .ac-wrap')) {
+            itemsList.querySelectorAll('.ac-list.open').forEach(l => l.classList.remove('open'));
+        }
+    });
+
+    // Other fields
+    itemsList.querySelectorAll('input[data-field="qty"], select[data-field="unit"]').forEach(inp => {
         inp.addEventListener('input', e => {
             const idx = Number(e.target.dataset.idx);
             const field = e.target.dataset.field;
