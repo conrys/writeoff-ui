@@ -141,8 +141,7 @@
 
   <!-- TABS -->
   <div style="display:flex;gap:4px;margin-bottom:13px;">
-    <button class="tab-btn active" id="tab-writeoff" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Списання</button>
-    <button class="tab-btn" id="tab-markdown" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Уцінка</button>
+    <button class="tab-btn active" id="tab-markdown" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Уцінка</button>
     <button class="tab-btn" id="tab-movement" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Переміщення</button>
   </div>
 
@@ -411,6 +410,17 @@ const woAuthor = document.getElementById('wo-author');
 const woNote   = document.getElementById('wo-note');
 const mvAuthor = document.getElementById('mv-author');
 const mvNote   = document.getElementById('mv-note');
+// Markdown inputs
+const mdInpFlower   = document.getElementById('md-inp-flower');
+const mdInpQty      = document.getElementById('md-inp-qty');
+const mdInpDt       = document.getElementById('md-inp-dt');
+const mdInpOldPrice = document.getElementById('md-inp-old-price');
+const mdInpNewPrice = document.getElementById('md-inp-new-price');
+const mdInpOldTotal = document.getElementById('md-inp-old-total');
+const mdInpNewTotal = document.getElementById('md-inp-new-total');
+const mdInpSalon    = document.getElementById('md-inp-salon');
+const mdAuthor      = document.getElementById('md-author');
+const mdNote        = document.getElementById('md-note');
 const photoGrid= document.getElementById('photo-grid');
 const btnAdd   = document.getElementById('btn-add-photo');
 const inpPhoto = document.getElementById('inp-photo');
@@ -418,7 +428,6 @@ const progWrap = document.getElementById('prog-wrap');
 const progBar  = document.getElementById('prog-bar');
 const photoCnt = document.getElementById('photo-count');
 const formTitle= document.getElementById('form-title');
-const tabWriteoff = document.getElementById('tab-writeoff');
 const tabMarkdown = document.getElementById('tab-markdown');
 const tabMovement = document.getElementById('tab-movement');
 const salonField  = document.getElementById('salon-field');
@@ -434,7 +443,7 @@ const inpToShop   = document.getElementById('inp-to-shop');
 const priceFields = document.getElementById('price-fields');
 
 /* ══ TAB STATE ══ */
-let currentMode = 'writeoff'; // 'writeoff' | 'movement'
+let currentMode = 'markdown'; // 'markdown' | 'movement'
 
 /* ══ MULTI-ITEM STATE ══ */
 let movementItems = []; // [{flowerName, qty, unit}, ...]
@@ -649,21 +658,12 @@ mdInpNewPrice.addEventListener('input',updateMdTotal);
 function switchMode(mode) {
     currentMode = mode;
     // Reset all tabs
-    [tabWriteoff, tabMarkdown, tabMovement].forEach(t => {
+    [tabMarkdown, tabMovement].forEach(t => {
         t.style.color = 'var(--muted)';
         t.style.background = 'transparent';
     });
 
-    if (mode === 'writeoff') {
-        formTitle.textContent = 'Списання';
-        tabWriteoff.style.color = 'var(--accent)';
-        tabWriteoff.style.background = 'var(--surface-2)';
-        writeoffFields.style.display = '';
-        markdownFields.style.display = 'none';
-        movementFields.style.display = 'none';
-        priceFields.style.display = '';
-        btnSave.textContent = 'Зберегти списання';
-    } else if (mode === 'markdown') {
+    if (mode === 'markdown') {
         formTitle.textContent = 'Уцінка';
         tabMarkdown.style.color = 'var(--accent)';
         tabMarkdown.style.background = 'var(--surface-2)';
@@ -685,7 +685,6 @@ function switchMode(mode) {
         if (movementItems.length === 0) addItem();
     }
 }
-tabWriteoff.addEventListener('click', () => switchMode('writeoff'));
 tabMarkdown.addEventListener('click', () => switchMode('markdown'));
 tabMovement.addEventListener('click', () => switchMode('movement'));
 
@@ -863,13 +862,7 @@ btnSave.addEventListener('click',async()=>{
   if(!authKey){toast('Сесія втрачена. Оновіть сторінку.','err');showAuth();return;}
 
   // Mode-specific validation
-  if (currentMode === 'writeoff') {
-      if(!photos.length)               {toast('Додай хоча б одне фото.','warn');return;}
-      if(!inpFlower.value.trim())      {toast('Введи назву квітки.','warn');return;}
-      if(Number(inpQty.value||0)<=0)   {toast('Кількість > 0.','warn');return;}
-      if(!woAuthor.value.trim())       {toast("Введи ім'я.",'warn');return;}
-      if(!inpSalon.value)              {toast('Обери салон.','warn');return;}
-  } else if (currentMode === 'markdown') {
+  if (currentMode === 'markdown') {
       // Markdown mode
       if(!mdPhotos.length)             {toast('Додай хоча б одне фото.','warn');return;}
       if(!mdInpFlower.value.trim())    {toast('Введи назву квітки.','warn');return;}
@@ -891,51 +884,10 @@ btnSave.addEventListener('click',async()=>{
   }
 
   btnSave.disabled=true;
-  updateTotal();
   logClear('Відправка в Firebase...');
   setStatus('Відправка...','warn');
 
-  if (currentMode === 'writeoff') {
-      const qty=Number(inpQty.value);
-      const pricePerUnit = Number(inpPrice.value||0);
-
-      const doc={
-        _auth_key:          authKey,
-        _status:            'new',
-        _created_at:        new Date().toISOString(),
-        type:               'writeoff',
-        flower_name:        inpFlower.value.trim(),
-        qty,
-        price_per_unit:     pricePerUnit,
-        writeoff_price:     Math.round(qty*pricePerUnit*100)/100,
-        writeoff_datetime:  new Date(inpDt.value).toISOString(),
-        salon:              inpSalon.value.trim(),
-        from_shop:          '',
-        to_shop:            '',
-        created_by:         woAuthor.value.trim(),
-        note:               woNote.value.trim(),
-        photos: photos.map(p=>({
-          base64: p.base64,
-          mime:   p.mimeType,
-          name:   p.name,
-        })),
-        items: [],
-      };
-
-      try{
-        const ref=await firestoreDb.collection('writeoffs').add(doc);
-        logLine('✅ Збережено! doc_id: '+ref.id,'ok');
-        logLine(`${doc.flower_name} · ${doc.qty} шт · ${doc.writeoff_price} грн · ${doc.salon} · ${photos.length} фото`,'info');
-        toast(`Списання збережено! (${photos.length} фото)`,'ok');
-        setStatus('Готово','');
-        setTimeout(()=>window.location.reload(),1400);
-      }catch(err){
-        logLine('ПОМИЛКА: '+err.message,'err');
-        toast(err.message,'err');
-        setStatus('Помилка','err');
-        btnSave.disabled=false;
-      }
-  } else if (currentMode === 'markdown') {
+  if (currentMode === 'markdown') {
       // Markdown mode
       const qty = Number(mdInpQty.value);
       const oldPrice = Number(mdInpOldPrice.value || 0);
@@ -1028,11 +980,11 @@ btnSave.addEventListener('click',async()=>{
 });
 
 /* ══ INIT  */
-setDefaultDt();
-updateTotal();
-renderPhotos();
-renderMvPhotos();
+setDefaultMdDt();
+updateMdTotal();
 renderMdPhotos();
+renderMvPhotos();
+switchMode('markdown');
 </script>
 </body>
 </html>
