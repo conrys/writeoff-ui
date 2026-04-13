@@ -142,6 +142,7 @@
   <!-- TABS -->
   <div style="display:flex;gap:4px;margin-bottom:13px;">
     <button class="tab-btn active" id="tab-writeoff" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Списання</button>
+    <button class="tab-btn" id="tab-markdown" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Уцінка</button>
     <button class="tab-btn" id="tab-movement" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;">Переміщення</button>
   </div>
 
@@ -199,6 +200,63 @@
       <div class="f"><label>Коментар</label><textarea id="wo-note" placeholder="Коротка причина або коментар"></textarea></div>
 
     </div><!-- /writeoff-fields -->
+
+    <!-- ═══ MARKDOWN MODE FIELDS ═══ -->
+    <div id="markdown-fields" style="display:none;">
+
+      <div>
+        <label>Фото <span class="hint">(до 5 шт)</span></label>
+        <div class="photo-area" style="margin-top:6px;">
+          <div class="photo-grid" id="md-photo-grid">
+            <div class="photo-add" id="md-btn-add-photo">
+              <span class="ic">📷</span>
+              Додати фото
+            </div>
+          </div>
+          <input id="md-inp-photo" type="file" accept="image/*" class="hidden">
+          <div class="photo-count" id="md-photo-count"></div>
+        </div>
+      </div>
+
+      <div class="f">
+        <label>Назва квітки</label>
+        <div class="ac-wrap">
+          <input id="md-inp-flower" type="text" placeholder="Почни вводити або обери..." autocomplete="off">
+          <div class="ac-list" id="md-ac-list"></div>
+        </div>
+      </div>
+
+      <div class="fr">
+        <div class="f"><label>Кількість</label><input id="md-inp-qty" type="number" min="1" step="1" inputmode="numeric" placeholder="1"></div>
+        <div class="f"><label>Дата і час</label><input id="md-inp-dt" type="datetime-local"></div>
+      </div>
+
+      <div class="fr">
+        <div class="f"><label>Стара ціна за шт., грн</label><input id="md-inp-old-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></div>
+        <div class="f"><label>Нова ціна за шт., грн</label><input id="md-inp-new-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></div>
+      </div>
+
+      <div class="fr">
+        <div class="f"><label>Сума до <span class="hint">(авто)</span></label><input id="md-inp-old-total" type="number" readonly tabindex="-1" placeholder="0"></div>
+        <div class="f"><label>Сума після <span class="hint">(авто)</span></label><input id="md-inp-new-total" type="number" readonly tabindex="-1" placeholder="0"></div>
+      </div>
+
+      <div class="fr">
+        <div class="f" id="md-salon-field">
+          <label>Салон</label>
+          <select id="md-inp-salon">
+            <option value="">— обери —</option>
+            <option>Салон №1</option>
+            <option>Салон №2</option>
+            <option>Салон №3</option>
+          </select>
+        </div>
+        <div class="f"><label>Хто переоцінює</label><input id="md-author" type="text" placeholder="Ім'я"></div>
+      </div>
+
+      <div class="f"><label>Коментар</label><textarea id="md-note" placeholder="Причина уцінки або коментар"></textarea></div>
+
+    </div><!-- /markdown-fields -->
 
     <!-- ═══ MOVEMENT MODE FIELDS ═══ -->
     <div id="movement-fields" style="display:none;">
@@ -361,9 +419,11 @@ const progBar  = document.getElementById('prog-bar');
 const photoCnt = document.getElementById('photo-count');
 const formTitle= document.getElementById('form-title');
 const tabWriteoff = document.getElementById('tab-writeoff');
+const tabMarkdown = document.getElementById('tab-markdown');
 const tabMovement = document.getElementById('tab-movement');
 const salonField  = document.getElementById('salon-field');
 const writeoffFields  = document.getElementById('writeoff-fields');
+const markdownFields  = document.getElementById('markdown-fields');
 const movementFields  = document.getElementById('movement-fields');
 const itemsList = document.getElementById('items-list');
 const btnAddItem = document.getElementById('btn-add-item');
@@ -382,12 +442,19 @@ let movementItems = []; // [{flowerName, qty, unit}, ...]
 /* ══ MULTI-PHOTO STATE ══ */
 let photos = []; // writeoff photos [{base64, mimeType, name, dataUrl}, ...]
 let mvPhotos = []; // movement photos
+let mdPhotos = []; // markdown photos
 
 /* ══ MOVEMENT PHOTO DOM ══ */
 const mvPhotoGrid  = document.getElementById('mv-photo-grid');
 const mvBtnAdd     = document.getElementById('mv-btn-add-photo');
 const mvInpPhoto   = document.getElementById('mv-inp-photo');
 const mvPhotoCnt   = document.getElementById('mv-photo-count');
+
+/* ══ MARKDOWN PHOTO DOM ══ */
+const mdPhotoGrid  = document.getElementById('md-photo-grid');
+const mdBtnAdd     = document.getElementById('md-btn-add-photo');
+const mdInpPhoto   = document.getElementById('md-inp-photo');
+const mdPhotoCnt   = document.getElementById('md-photo-count');
 
 /* ══ TOAST / LOG ══ */
 function toast(msg,type=''){ toastEl.textContent=msg; toastEl.className=`toast show${type?' '+type:''}`; clearTimeout(window._tt); window._tt=setTimeout(()=>{toastEl.className='toast';},3000); }
@@ -568,38 +635,63 @@ function updateTotal(){ const q=Number(inpQty.value||0),p=Number(inpPrice.value|
 inpQty.addEventListener('input',updateTotal);
 inpPrice.addEventListener('input',updateTotal);
 
+/* ══ MARKDOWN TOTAL ══ */
+function updateMdTotal(){
+  const q=Number(mdInpQty.value||0), op=Number(mdInpOldPrice.value||0), np=Number(mdInpNewPrice.value||0);
+  mdInpOldTotal.value=isFinite(q*op)?Math.round(q*op*100)/100:'';
+  mdInpNewTotal.value=isFinite(q*np)?Math.round(q*np*100)/100:'';
+}
+mdInpQty.addEventListener('input',updateMdTotal);
+mdInpOldPrice.addEventListener('input',updateMdTotal);
+mdInpNewPrice.addEventListener('input',updateMdTotal);
+
 /* ══ TAB SWITCHING ══ */
 function switchMode(mode) {
     currentMode = mode;
+    // Reset all tabs
+    [tabWriteoff, tabMarkdown, tabMovement].forEach(t => {
+        t.style.color = 'var(--muted)';
+        t.style.background = 'transparent';
+    });
+
     if (mode === 'writeoff') {
         formTitle.textContent = 'Списання';
         tabWriteoff.style.color = 'var(--accent)';
         tabWriteoff.style.background = 'var(--surface-2)';
-        tabMovement.style.color = 'var(--muted)';
-        tabMovement.style.background = 'transparent';
         writeoffFields.style.display = '';
+        markdownFields.style.display = 'none';
         movementFields.style.display = 'none';
         priceFields.style.display = '';
         btnSave.textContent = 'Зберегти списання';
+    } else if (mode === 'markdown') {
+        formTitle.textContent = 'Уцінка';
+        tabMarkdown.style.color = 'var(--accent)';
+        tabMarkdown.style.background = 'var(--surface-2)';
+        writeoffFields.style.display = 'none';
+        markdownFields.style.display = '';
+        movementFields.style.display = 'none';
+        priceFields.style.display = 'none';
+        btnSave.textContent = 'Зберегти уцінку';
+        setDefaultMdDt();
     } else {
         formTitle.textContent = 'Переміщення';
         tabMovement.style.color = 'var(--accent)';
         tabMovement.style.background = 'var(--surface-2)';
-        tabWriteoff.style.color = 'var(--muted)';
-        tabWriteoff.style.background = 'transparent';
         writeoffFields.style.display = 'none';
+        markdownFields.style.display = 'none';
         movementFields.style.display = '';
         priceFields.style.display = 'none';
         btnSave.textContent = 'Зберегти переміщення';
-        // Add first item if list is empty
         if (movementItems.length === 0) addItem();
     }
 }
 tabWriteoff.addEventListener('click', () => switchMode('writeoff'));
+tabMarkdown.addEventListener('click', () => switchMode('markdown'));
 tabMovement.addEventListener('click', () => switchMode('movement'));
 
 /* ══ DATETIME ══ */
 function setDefaultDt(){ const n=new Date(); inpDt.value=new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,16); }
+function setDefaultMdDt(){ const n=new Date(); mdInpDt.value=new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,16); }
 
 /* ══ AUTOCOMPLETE ══ */
 function renderAc(q){ const query=q.trim().toLowerCase(); const matches=query?FLOWER_LIST.filter(f=>f.toLowerCase().includes(query)):FLOWER_LIST; if(!matches.length){acList.classList.remove('open');return;} acActive=-1; acList.innerHTML=matches.map(f=>`<div class="ac-item" data-val="${f.replace(/"/g,'&quot;')}">${f}</div>`).join(''); acList.classList.add('open'); }
@@ -648,16 +740,37 @@ function renderMvPhotos(){
   mvBtnAdd.style.display = mvPhotos.length >= MAX_PHOTOS_MV ? 'none' : '';
 }
 
+/* ══ MARKDOWN PHOTO RENDER ══ */
+function renderMdPhotos(){
+  mdPhotoGrid.querySelectorAll('.photo-thumb').forEach(el=>el.remove());
+  mdPhotos.forEach((p,i)=>{
+    const thumb = document.createElement('div');
+    thumb.className = 'photo-thumb';
+    thumb.innerHTML = `<img src="${p.dataUrl}" alt="Фото ${i+1}"><button class="remove-btn" data-idx="${i}" type="button">×</button>`;
+    thumb.querySelector('img').addEventListener('click',()=>openLightbox(i,'md'));
+    thumb.querySelector('.remove-btn').addEventListener('click',(e)=>{e.stopPropagation();mdPhotos.splice(i,1);renderMdPhotos();});
+    mdPhotoGrid.insertBefore(thumb, mdBtnAdd);
+  });
+  mdPhotoCnt.textContent = mdPhotos.length > 0 ? `${mdPhotos.length} / ${MAX_PHOTOS_WO} фото` : '';
+  mdBtnAdd.style.display = mdPhotos.length >= MAX_PHOTOS_WO ? 'none' : '';
+}
+
 /* ══ LIGHTBOX ══ */
 const lightbox = document.getElementById('lightbox');
 const lbImg    = document.getElementById('lb-img');
 const lbCounter= document.getElementById('lb-counter');
 let lbIndex = 0;
-let lbTarget = 'wo'; // 'wo' | 'mv'
+let lbTarget = 'wo'; // 'wo' | 'mv' | 'md'
+
+function getPhotoArr(target){
+  if (target === 'mv') return mvPhotos;
+  if (target === 'md') return mdPhotos;
+  return photos;
+}
 
 function openLightbox(idx, target='wo'){
   lbTarget = target;
-  const arr = target==='mv' ? mvPhotos : photos;
+  const arr = getPhotoArr(target);
   lbIndex = idx;
   lbImg.src = arr[idx].dataUrl;
   lbCounter.textContent = `${idx+1} / ${arr.length}`;
@@ -667,11 +780,11 @@ function openLightbox(idx, target='wo'){
 }
 function closeLightbox(){ lightbox.classList.remove('show'); }
 function lbPrev(){
-  const arr = lbTarget==='mv' ? mvPhotos : photos;
+  const arr = getPhotoArr(lbTarget);
   lbIndex=(lbIndex-1+arr.length)%arr.length; lbImg.src=arr[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${arr.length}`;
 }
 function lbNext(){
-  const arr = lbTarget==='mv' ? mvPhotos : photos;
+  const arr = getPhotoArr(lbTarget);
   lbIndex=(lbIndex+1)%arr.length; lbImg.src=arr[lbIndex].dataUrl; lbCounter.textContent=`${lbIndex+1} / ${arr.length}`;
 }
 
@@ -692,6 +805,9 @@ inpPhoto.addEventListener('change',e=>{ if(e.target.files?.[0]) processFile(e.ta
 
 mvBtnAdd.addEventListener('click',()=>mvInpPhoto.click());
 mvInpPhoto.addEventListener('change',e=>{ if(e.target.files?.[0]) processFile(e.target.files[0], 'mv'); });
+
+mdBtnAdd.addEventListener('click',()=>mdInpPhoto.click());
+mdInpPhoto.addEventListener('change',e=>{ if(e.target.files?.[0]) processFile(e.target.files[0], 'md'); });
 
 function loadImg(file){
   return new Promise((resolve,reject)=>{
@@ -718,8 +834,11 @@ function compress(img){
 
 async function processFile(file, target='wo'){
   if(!file)return;
-  const arr = target==='mv' ? mvPhotos : photos;
-  const limit = target==='mv' ? MAX_PHOTOS_MV : MAX_PHOTOS_WO;
+  let arr, limit, inp;
+  if (target === 'mv') { arr = mvPhotos; limit = MAX_PHOTOS_MV; inp = mvInpPhoto; }
+  else if (target === 'md') { arr = mdPhotos; limit = MAX_PHOTOS_WO; inp = mdInpPhoto; }
+  else { arr = photos; limit = MAX_PHOTOS_WO; inp = inpPhoto; }
+
   if(arr.length>=limit){toast(`Максимум ${limit} фото`,'warn');return;}
   if(target==='wo'){ progWrap.classList.add('show'); setProgress(10); }
   try{
@@ -729,11 +848,11 @@ async function processFile(file, target='wo'){
     const sizeKB=Math.ceil((base64.length*3)/4/1024);
     if(sizeKB>MAX_B64_KB)throw new Error(`Фото завелике (${sizeKB}KB > ${MAX_B64_KB}KB)`);
     arr.push({base64,mimeType:'image/jpeg',name:file.name||'photo.jpg',dataUrl});
-    if(target==='mv') renderMvPhotos(); else renderPhotos();
+    if(target==='mv') renderMvPhotos(); else if(target==='md') renderMdPhotos(); else renderPhotos();
     if(target==='wo'){ setProgress(100); setTimeout(()=>progWrap.classList.remove('show'),600); }
     toast(`Фото додано (${arr.length}/${limit})`,'ok');
   }catch(e){ toast(e.message,'err'); }
-  (target==='mv'?mvInpPhoto:inpPhoto).value='';
+  inp.value='';
 }
 
 function setProgress(pct){ progBar.style.width=pct+'%'; }
@@ -750,6 +869,13 @@ btnSave.addEventListener('click',async()=>{
       if(Number(inpQty.value||0)<=0)   {toast('Кількість > 0.','warn');return;}
       if(!woAuthor.value.trim())       {toast("Введи ім'я.",'warn');return;}
       if(!inpSalon.value)              {toast('Обери салон.','warn');return;}
+  } else if (currentMode === 'markdown') {
+      // Markdown mode
+      if(!mdPhotos.length)             {toast('Додай хоча б одне фото.','warn');return;}
+      if(!mdInpFlower.value.trim())    {toast('Введи назву квітки.','warn');return;}
+      if(Number(mdInpQty.value||0)<=0) {toast('Кількість > 0.','warn');return;}
+      if(!mdAuthor.value.trim())       {toast("Введи ім'я.",'warn');return;}
+      if(!mdInpSalon.value)            {toast('Обери салон.','warn');return;}
   } else {
       // Movement mode
       const filledItems = movementItems.filter(it => it.flowerName.trim());
@@ -809,6 +935,50 @@ btnSave.addEventListener('click',async()=>{
         setStatus('Помилка','err');
         btnSave.disabled=false;
       }
+  } else if (currentMode === 'markdown') {
+      // Markdown mode
+      const qty = Number(mdInpQty.value);
+      const oldPrice = Number(mdInpOldPrice.value || 0);
+      const newPrice = Number(mdInpNewPrice.value || 0);
+
+      const doc = {
+        _auth_key:          authKey,
+        _status:            'new',
+        _created_at:        new Date().toISOString(),
+        type:               'markdown',
+        flower_name:        mdInpFlower.value.trim(),
+        qty,
+        price_per_unit:     oldPrice,
+        writeoff_price:     Math.round(qty * newPrice * 100) / 100,
+        old_price:          oldPrice,
+        new_price:          newPrice,
+        writeoff_datetime:  new Date(mdInpDt.value).toISOString(),
+        salon:              mdInpSalon.value.trim(),
+        from_shop:          '',
+        to_shop:            '',
+        created_by:         mdAuthor.value.trim(),
+        note:               mdNote.value.trim(),
+        photos: mdPhotos.map(p => ({
+          base64: p.base64,
+          mime:   p.mimeType,
+          name:   p.name,
+        })),
+        items: [],
+      };
+
+      try {
+        const ref = await firestoreDb.collection('writeoffs').add(doc);
+        logLine('✅ Збережено! doc_id: ' + ref.id, 'ok');
+        logLine(`${doc.flower_name} · ${doc.qty} шт · ${oldPrice}→${newPrice} грн · ${doc.salon} · ${mdPhotos.length} фото`, 'info');
+        toast(`Уцінка збережена! (${mdPhotos.length} фото)`, 'ok');
+        setStatus('Готово', '');
+        setTimeout(() => window.location.reload(), 1400);
+      } catch (err) {
+        logLine('ПОМИЛКА: ' + err.message, 'err');
+        toast(err.message, 'err');
+        setStatus('Помилка', 'err');
+        btnSave.disabled = false;
+      }
   } else {
       // Movement mode - multi-item
       const filledItems = movementItems.filter(it => it.flowerName.trim());
@@ -857,11 +1027,12 @@ btnSave.addEventListener('click',async()=>{
   }
 });
 
-/* ══ INIT ═ */
+/* ══ INIT  */
 setDefaultDt();
 updateTotal();
 renderPhotos();
 renderMvPhotos();
+renderMdPhotos();
 </script>
 </body>
 </html>
