@@ -967,7 +967,7 @@ btnSave.addEventListener('click',async()=>{
         qty:                filledItems.reduce((s,it)=>s+Number(it.qty||0),0),
         price_per_unit:     0,
         writeoff_price:     0,
-        writeoff_datetime:  new Date(inpDt.value).toISOString(),
+        writeoff_datetime: new Date().toISOString(),
         salon:              '',
         from_shop:          inpFromShop.value.trim(),
         to_shop:            inpToShop.value.trim(),
